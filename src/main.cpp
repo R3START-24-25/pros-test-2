@@ -18,8 +18,8 @@ void opcontrol() {
 		int dir = master.get_analog(ANALOG_LEFT_Y);
 		int turn = master.get_analog(ANALOG_RIGHT_X);
 
-		left_mg.move(dir - turn);
-		right_mg.move(dir + turn);
+		left_mg.move(- turn - dir);
+		right_mg.move(- turn + dir);
 
 		pros::delay(5);
 	}
