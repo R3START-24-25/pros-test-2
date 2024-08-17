@@ -22,10 +22,14 @@ void opcontrol() {
 		int turn = master.get_analog(ANALOG_RIGHT_X);
 
         //if (dir <= 80) dir *= exponential_a;
-        //else dir = 127;
+        //else if (dir > 0) dir = 127;
+        //else if (dir >= -80) dir = abs(dir) * exponential_a * -1;
+        //else if (dir < 0) dir = -127;
 
         //if (turn <= 80) turn *= exponential_a;
-        //else turn = 127;
+        //else if (turn > 0) turn = 127;
+        //else if (turn >= -80) turn = abs(turn) * exponential_a * -1;
+        //else if (turn < 0) turn = -127;
         
         if (dir > 2 && dir < 35) dir = 20;
         else if (dir > 90) dir = 127;
