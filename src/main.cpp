@@ -20,8 +20,10 @@ void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup left_mg({8, 7, 10});
 	pros::MotorGroup right_mg({1, 2, 3});
+    pros::adi::DigitalOut mogo_mech(1);
 
     const float exponential_a = pow(10, (log10(127)/80));
+    bool mogo_state = false;
 
 	while (true) {
 		int dir = master.get_analog(ANALOG_LEFT_Y);
@@ -36,8 +38,13 @@ void opcontrol() {
         else if (dir < -2) dir = -1*exponential_b(abs(dir));
         else dir = 0;
 
-		left_mg.move(- turn - dir);
-		right_mg.move(- turn + dir);
+		left_mg.move(-turn - dir);
+		right_mg.move(-turn + dir);
+
+        if (master.get_digital_new_press(DIGITAL_R2)) {
+            mogo_state = !mogo_state;
+            mogo_mech.set_value(mogo_state);
+        }
 
 		pros::delay(5);
 	}
