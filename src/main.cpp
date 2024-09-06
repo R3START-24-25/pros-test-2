@@ -9,7 +9,7 @@ void disabled() {}
 
 // after init when in comp
 void competition_initialize() {}
-//testing
+
 void autonomous() {}
 
 float exponential_b(float x) {
