@@ -1,9 +1,47 @@
 #include "main.h"
+#include "pros/imu.hpp"
+#include "pros/rtos.hpp"
 #include <cmath>
 
 const double EulerConstant = std::exp(1.0);
 
-void initialize() {}
+void num_int_thr() {
+    pros::Imu inertial_one(1);
+    pros::Imu inertial_two(2);
+
+    inertial_one.reset();
+    while (inertial_one.is_calibrating()) {
+        pros::c::delay(10);
+    }
+    inertial_one.set_data_rate(2);
+    printf("Ready!");
+
+    float last_a = inertial_one.get_accel().x;
+    float last_v = 0;
+    float dist = 0;
+    int count = 0;
+
+    while (true) {
+        float a = inertial_one.get_accel().x;
+        float avg_a = 0.5*(a + last_a);
+        last_a = a;
+
+        float v = avg_a*0.002 + last_v;
+        last_v = v;
+
+        dist += v*0.002;
+
+        count++;
+        if (count == 500) printf("s: %f", dist);
+        pros::c::delay(2);
+    }
+}
+
+void initialize() {
+    pros::Imu inertial_one(1);
+    pros::Imu inertial_two(2);
+    pros::Task numerical_integration(num_int_thr);
+}
 
 void disabled() {}
 
