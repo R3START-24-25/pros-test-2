@@ -10,6 +10,7 @@ void disabled() {}
 // after init when in comp
 void competition_initialize() {}
 
+//azlan comment c++
 void autonomous() {}
 
 float exponential_b(float x) {
