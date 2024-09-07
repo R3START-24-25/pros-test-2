@@ -1,4 +1,5 @@
 #include "main.h"
+#include "pros/misc.h"
 #include <cmath>
 
 const double EulerConstant = std::exp(1.0);
@@ -41,7 +42,7 @@ void opcontrol() {
 		left_mg.move(-turn - dir);
 		right_mg.move(-turn + dir);
 
-        if (master.get_digital_new_press(DIGITAL_R2)) {
+        if (master.get_digital_new_press(DIGITAL_R2) || master.get_digital_new_press(DIGITAL_R1)) {
             mogo_state = !mogo_state;
             mogo_mech.set_value(mogo_state);
         }
