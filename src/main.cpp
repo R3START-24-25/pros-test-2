@@ -19,8 +19,8 @@ float exponential_b(float x) {
 
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({8, 7, 10});
-	pros::MotorGroup right_mg({1, 2, 3});
+	pros::MotorGroup left_mg({-11, 12, 13});
+	pros::MotorGroup right_mg({-20, 19, 18});
     pros::adi::DigitalOut mogo_mech(1);
 
     const float exponential_a = pow(10, (log10(127)/80));
