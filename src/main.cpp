@@ -7,8 +7,9 @@
 const double EulerConstant = std::exp(1.0);
 
 void num_int_thr() {
-    pros::Imu inertial_one(1);
-    pros::Imu inertial_two(2);
+    printf("Start Thread!");
+    pros::Imu inertial_one(17);
+    //pros::Imu inertial_two(2);
 
     inertial_one.reset();
     while (inertial_one.is_calibrating()) {
@@ -24,6 +25,7 @@ void num_int_thr() {
 
     while (true) {
         float a = inertial_one.get_accel().x;
+        if (a < 0.55) a = 0;
         float avg_a = 0.5*(a + last_a);
         last_a = a;
 
@@ -32,16 +34,17 @@ void num_int_thr() {
 
         dist += v*0.002;
 
+        if (count % 200 == 0) {
+            std::cout << "s: " << dist << std::endl;
+            std::cout << "a: " << a << std::endl;
+            std::cout << "v: " << v << std::endl;
+        }
         count++;
-        if (count == 500) printf("s: %f", dist);
         pros::c::delay(2);
     }
 }
 
 void initialize() {
-    pros::Imu inertial_one(1);
-    pros::Imu inertial_two(2);
-    pros::Task numerical_integration(num_int_thr);
 }
 
 void disabled() {}
@@ -56,6 +59,7 @@ float exponential_b(float x) {
 }
 
 void opcontrol() {
+    pros::Task numerical_integration(num_int_thr);
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup left_mg({11, 12, 13});
 	pros::MotorGroup right_mg({20, 19, 18});
