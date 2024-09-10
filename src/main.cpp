@@ -12,9 +12,6 @@ void disabled() {}
 // after init when in comp
 void competition_initialize() {}
 
-//azlan comment c++
-void autonomous() {}
-
 float exponential_b(float x) {
     return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
 }
