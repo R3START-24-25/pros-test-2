@@ -5,22 +5,13 @@
 
 const double EulerConstant = std::exp(1.0);
 
-void initialize() {}
-
-void disabled() {}
-
-// after init when in comp
-void competition_initialize() {}
-
-float exponential_b(float x) {
-    return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
-}
-
-void opcontrol() {
+class Drive {
     const float exponential_a = pow(10, (log10(127)/80));
-    bool mogo_state = false;
+    const float exponential_b(float x) {
+        return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
+    }
 
-	while (true) {
+    public: void movement() {
 		int dir = controller.get_analog(ANALOG_LEFT_Y);
 		int turn = controller.get_analog(ANALOG_RIGHT_X);
     
@@ -35,6 +26,22 @@ void opcontrol() {
 
 		left_drive_motors.move(-turn - dir);
 		right_drive_motors.move(-turn + dir);
+    }
+};
+
+void initialize() {}
+
+void disabled() {}
+
+// after init when in comp
+void competition_initialize() {}
+
+void opcontrol() {
+    Drive drive;
+    bool mogo_state = false;
+
+	while (true) {
+        drive.movement();
 
         if (controller.get_digital_new_press(DIGITAL_R2) || controller.get_digital_new_press(DIGITAL_R1)) {
             mogo_state = !mogo_state;
@@ -44,3 +51,4 @@ void opcontrol() {
 		pros::delay(5);
 	}
 }
+
