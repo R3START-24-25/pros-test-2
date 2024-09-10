@@ -5,26 +5,16 @@
 
 const double EulerConstant = std::exp(1.0);
 
-void initialize() {}
-
-void disabled() {}
-
-// after init when in comp
-void competition_initialize() {}
-
-void autonomous() {}
-
-float exponential_b(float x) {
-    return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
-}
-
-void opcontrol() {
+class Drive {
     const float exponential_a = pow(10, (log10(127)/80));
-    bool mogo_state = false;
 
-	while (true) {
-		int dir = controller.get_analog(ANALOG_LEFT_Y);
-		int turn = controller.get_analog(ANALOG_RIGHT_X);
+    const float exponential_b(float x) {
+        return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
+    }
+
+    public: void movement() {
+        int dir = controller.get_analog(ANALOG_LEFT_Y);
+        int turn = controller.get_analog(ANALOG_RIGHT_X);
     
         if (turn <= 80) turn *= exponential_a;
         else if (turn > 0) turn = 127;
@@ -35,14 +25,46 @@ void opcontrol() {
         else if (dir < -2) dir = -1*exponential_b(abs(dir));
         else dir = 0;
 
-		left_drive_motors.move(-turn - dir);
-		right_drive_motors.move(-turn + dir);
+        left_drive_motors.move(-turn - dir);
+        right_drive_motors.move(-turn + dir);
+    }
+};
+
+class Position {
+    public: float x = 0;
+            float y = 0;
+            float theta = 0;
+};
+
+class Odom {
+    const float sL = 0;
+    const float sB = 0;
+    Position position;
+
+    public: void update_position() {
+        position.x = 0;
+    }
+};
+
+void initialize() {}
+
+void disabled() {}
+
+// after init when in comp
+void competition_initialize() {}
+
+void opcontrol() {
+    Drive drive;
+    bool mogo_state = false;
+
+    while (true) {
+        drive.movement();
 
         if (controller.get_digital_new_press(DIGITAL_R2) || controller.get_digital_new_press(DIGITAL_R1)) {
             mogo_state = !mogo_state;
             mogo_piston.set_value(mogo_state);
         }
 
-		pros::delay(5);
-	}
+        pros::delay(5);
+    }
 }
