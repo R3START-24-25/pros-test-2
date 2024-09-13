@@ -40,8 +40,8 @@ class Position {
 Position position;
 
 class Odom {
-    const float left_offset = 0;
-    const float back_offset = 0;
+    const float left_offset = 0.8267;
+    const float back_offset = 2.2047;
     const float wheel_diameter = 2; // inches
 
     float last_imu_reading = 0;
@@ -54,13 +54,9 @@ class Odom {
             float left_reading = left_encoder.get_position() / 100.0;
             float back_reading = back_encoder.get_position() / 100.0;
 
-            float delta_imu = imu_reading = last_imu_reading;
+            float delta_imu = imu_reading - last_imu_reading;
             float delta_left_reading = left_reading - last_left_reading;
             float delta_back_reading = back_reading - last_back_reading;
-
-            last_imu_reading = imu_reading;
-            last_left_reading = left_reading;
-            last_back_reading = back_reading;
 
             float delta_dist_left = M_PI*wheel_diameter * (delta_left_reading/360);
             float delta_dist_back = M_PI*wheel_diameter * (delta_back_reading/360);
@@ -68,13 +64,17 @@ class Odom {
             position.theta = imu_reading;
             float delta_theta = imu_reading - last_imu_reading;
 
+            last_imu_reading = imu_reading;
+            last_left_reading = left_reading;
+            last_back_reading = back_reading;
+
             float delta_local_offset[2];
             if (delta_theta == 0) {
                 delta_local_offset[0] = delta_dist_back;
                 delta_local_offset[1] = delta_dist_left;
             }
             else {
-                const float constant = 2*sin(delta_theta / 2);
+                const float constant = 2*sinf((delta_theta * M_PI) / 360);
                 delta_local_offset[0] = constant * ( (delta_dist_back/delta_theta) + back_offset );
                 delta_local_offset[1] = constant * ( (delta_dist_left/delta_theta) + left_offset );
             }
@@ -88,13 +88,13 @@ class Odom {
             polar_delta_local_offset[1] += avg_theta;
             float delta_global_offset[2] = { // cartesian
                 polar_delta_local_offset[0] * cosf(polar_delta_local_offset[1]),
-                polar_delta_local_offset[1] * sinf(polar_delta_local_offset[1])
+                polar_delta_local_offset[0] * sinf(polar_delta_local_offset[1])
             };
 
-            position.x += delta_local_offset[0];
-            position.y += delta_local_offset[1];
+            position.x += delta_global_offset[0];
+            position.y += delta_global_offset[1];
 
-            pros::c::delay(2);
+            pros::c::delay(10);
         }
     }
 };
@@ -128,7 +128,9 @@ void opcontrol() {
             mogo_piston.set_value(mogo_state);
         }
 
-        if (count % 100 == 0) std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta;
+        if (count % 500 == 0) {
+            std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
+        }
         count++;
 
         pros::delay(5);
