@@ -8,7 +8,6 @@ const double EulerConstant = std::exp(1.0);
 
 class Drive {
     const float exponential_a = pow(10, (log10(127)/80));
-
     const float exponential_b(float x) {
         return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
     }
@@ -16,7 +15,7 @@ class Drive {
     public: void movement() {
         int dir = controller.get_analog(ANALOG_LEFT_Y);
         int turn = controller.get_analog(ANALOG_RIGHT_X);
-    
+
         if (turn <= 80) turn *= exponential_a;
         else if (turn > 0) turn = 127;
         else if (turn >= -80) turn = abs(turn) * exponential_a * -1;
@@ -100,6 +99,8 @@ class Odom {
 };
 
 void initialize() {
+    lift_motor.tare_position();
+
     inertial_sensor.reset();
     inertial_sensor.set_heading(0);
 
@@ -118,15 +119,26 @@ void competition_initialize() {}
 void opcontrol() {
     Drive drive;
     bool mogo_state = false;
+    bool lift_down = true;
     int count = 0;
 
-    while (true) {
+	while (true) {
         drive.movement();
 
         if (controller.get_digital_new_press(DIGITAL_R2) || controller.get_digital_new_press(DIGITAL_R1)) {
             mogo_state = !mogo_state;
             mogo_piston.set_value(mogo_state);
         }
+
+        if (controller.get_digital(DIGITAL_L1)) intake_motor.move(127);
+        else if (controller.get_digital(DIGITAL_L2)) intake_motor.move(-127);
+        else intake_motor.move(0);
+
+        if (controller.get_digital_new_press(DIGITAL_RIGHT)) {
+            if (lift_down) lift_motor.move_absolute(1000, -200);
+            else lift_motor.move_absolute(2000, -200);
+        }
+        if (controller.get_digital_new_press(DIGITAL_DOWN)) lift_motor.move_absolute(0, -200);
 
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";

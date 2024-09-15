@@ -13,3 +13,7 @@ pros::adi::DigitalOut mogo_piston(1);
 pros::Imu inertial_sensor(17);
 pros::Rotation left_encoder(16);
 pros::Rotation back_encoder(15);
+
+pros::Rotation lift_rotation_sensor(21);
+pros::Motor lift_motor(1);
+pros::Motor intake_motor(10);

@@ -12,9 +12,13 @@ extern pros::MotorGroup right_drive_motors;
 
 extern pros::adi::DigitalOut mogo_piston;
 
+extern pros::Imu inertial_sensor;
 extern pros::Rotation left_encoder;
 extern pros::Rotation back_encoder;
-extern pros::Imu inertial_sensor;
+
+extern pros::Rotation lift_rotation_sensor;
+extern pros::Motor lift_motor;
+extern pros::Motor intake_motor;
 
 #define ROBOT_HPP
 #endif
