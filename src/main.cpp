@@ -29,7 +29,9 @@ class Drive {
     }
 };
 
-void initialize() {}
+void initialize() {
+    lift_motor.tare_position();
+}
 
 void disabled() {}
 
@@ -39,6 +41,7 @@ void competition_initialize() {}
 void opcontrol() {
     Drive drive;
     bool mogo_state = false;
+    bool lift_down = true;
 
 	while (true) {
         drive.movement();
@@ -47,6 +50,16 @@ void opcontrol() {
             mogo_state = !mogo_state;
             mogo_piston.set_value(mogo_state);
         }
+
+        if (controller.get_digital(DIGITAL_L1)) intake_motor.move(127);
+        else if (controller.get_digital(DIGITAL_L2)) intake_motor.move(-127);
+        else intake_motor.move(0);
+
+        if (controller.get_digital_new_press(DIGITAL_RIGHT)) {
+            if (lift_down) lift_motor.move_absolute(1000, -200);
+            else lift_motor.move_absolute(2000, -200);
+        }
+        if (controller.get_digital_new_press(DIGITAL_DOWN)) lift_motor.move_absolute(0, -200);
 
 		pros::delay(5);
 	}
