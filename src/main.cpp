@@ -63,10 +63,6 @@ class Odom {
             position.theta = imu_reading;
             float delta_theta = imu_reading - last_imu_reading;
 
-            last_imu_reading = imu_reading;
-            last_left_reading = left_reading;
-            last_back_reading = back_reading;
-
             float delta_local_offset[2];
             if (delta_theta == 0) {
                 delta_local_offset[0] = delta_dist_back;
@@ -74,15 +70,19 @@ class Odom {
             }
             else {
                 const float constant = 2*sinf((delta_theta * M_PI) / 360);
+                std::cout << "thingy: " << delta_dist_back/delta_theta;
                 delta_local_offset[0] = constant * ( (delta_dist_back/delta_theta) + back_offset );
                 delta_local_offset[1] = constant * ( (delta_dist_left/delta_theta) + left_offset );
             }
+            std::cout << delta_local_offset[0] << " ";
 
             float avg_theta = last_imu_reading + (delta_theta / 2);
 
             float polar_delta_local_offset[2] = {
                 sqrtf( delta_local_offset[0] * delta_local_offset[0] + delta_local_offset[1] * delta_local_offset[1] ),
-                atanf( delta_local_offset[1] / delta_local_offset[0] )
+                delta_local_offset[0] == 0
+                    ? (delta_local_offset[1] > 0) ? 90 : -90
+                    : atanf( delta_local_offset[1] / delta_local_offset[0] )
             }; // distance, heading
             polar_delta_local_offset[1] += avg_theta;
             float delta_global_offset[2] = { // cartesian
@@ -93,7 +93,11 @@ class Odom {
             position.x += delta_global_offset[0];
             position.y += delta_global_offset[1];
 
-            pros::c::delay(10);
+            last_imu_reading = imu_reading;
+            last_left_reading = left_reading;
+            last_back_reading = back_reading;
+
+            pros::c::delay(5);
         }
     }
 };
