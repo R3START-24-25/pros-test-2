@@ -102,17 +102,26 @@ class Odom {
     }
 };
 
-void initialize() {
-    lift_motor.tare_position();
+void move_intake(int position, bool move_down) {
+    if (move_down) {
+        if (lift_rotation_sensor.get_position() < position) lift_motor.move(0);
+        else lift_motor.move(-127);
+    }
+    else {
+        if (lift_rotation_sensor.get_position() > position) lift_motor.move(0);
+        else lift_motor.move(127);
+    }
+}
 
+void initialize() {
+    Odom odom;
     inertial_sensor.reset();
     inertial_sensor.set_heading(0);
-
     left_encoder.reset_position();
     back_encoder.reset_position();
-
-    Odom odom;
     pros::Task odom_thread( [&odom]() {odom.update_position();} );
+
+    lift_motor.set_brake_mode(pros::MotorBrake::hold);
 }
 
 void disabled() {}
@@ -123,8 +132,11 @@ void competition_initialize() {}
 void opcontrol() {
     Drive drive;
     bool mogo_state = false;
-    bool lift_down = true;
     int count = 0;
+
+    int lift_target_pos = 0;
+    bool move_lift_down = false;
+    bool lift_is_down = true;
 
 	while (true) {
         drive.movement();
@@ -139,10 +151,16 @@ void opcontrol() {
         else intake_motor.move(0);
 
         if (controller.get_digital_new_press(DIGITAL_RIGHT)) {
-            if (lift_down) lift_motor.move_absolute(1000, -200);
-            else lift_motor.move_absolute(2000, -200);
+            if (lift_is_down) lift_target_pos = 6000;
+            else lift_target_pos = 9000;
+            move_lift_down = false;
         }
-        if (controller.get_digital_new_press(DIGITAL_DOWN)) lift_motor.move_absolute(0, -200);
+        if (controller.get_digital_new_press(DIGITAL_DOWN)) {
+            lift_target_pos = 0;
+            move_lift_down = true;
+        }
+
+        move_intake(lift_target_pos, move_lift_down);
 
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
