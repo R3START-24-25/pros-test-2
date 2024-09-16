@@ -175,11 +175,7 @@ void opcontrol() {
 
         move_intake(lift_target_pos, move_lift_down);
 
-        if (count % 500 == 0) {
-            std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
-            std::cout << "inertial: " << inertial_sensor.get_rotation();
-        }
-        count++;
+        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
 
         pros::delay(5);
     }
