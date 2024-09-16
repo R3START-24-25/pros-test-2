@@ -51,11 +51,15 @@ class Odom {
         position.y = 0;
         position.theta = 0;
 
-        while(true) {
+        while (inertial_sensor.is_calibrating()) pros::c::delay(10);
+        while (true) {
             float imu_reading = inertial_sensor.get_heading();
             if (imu_reading > 360) imu_reading = 0;
+            std::cout << "imu_reading: " << imu_reading << "\n";
             float left_reading = left_encoder.get_position() / 100.0;
+            std::cout << "imu_reading: " << left_reading << "\n";
             float back_reading = back_encoder.get_position() / 100.0;
+            std::cout << "imu_reading: " << back_reading << "\n";
 
             float delta_imu = imu_reading - last_imu_reading;
             float delta_left_reading = left_reading - last_left_reading;
@@ -119,8 +123,11 @@ void initialize() {
     Odom odom;
     inertial_sensor.reset();
     inertial_sensor.set_heading(0);
+    inertial_sensor.set_data_rate(5);
     left_encoder.reset_position();
+    left_encoder.set_data_rate(5);
     back_encoder.reset_position();
+    back_encoder.set_data_rate(5);
     pros::Task odom_thread( [&odom]() {odom.update_position();} );
 
     lift_motor.set_brake_mode(pros::MotorBrake::hold);
@@ -171,7 +178,6 @@ void opcontrol() {
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
             std::cout << "inertial: " << inertial_sensor.get_rotation();
-            std::cout << "inertial: " << (inertial_sensor.get_rotation() > 366);
         }
         count++;
 
