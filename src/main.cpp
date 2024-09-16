@@ -4,9 +4,8 @@
 #include "robot.hpp"
 #include <cmath>
 
-const double EulerConstant = std::exp(1.0);
-
 class Drive {
+    const double EulerConstant = std::exp(1.0);
     const float exponential_a = pow(10, (log10(127)/80));
     const float exponential_b(float x) {
         return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
@@ -48,8 +47,13 @@ class Odom {
     float last_back_reading = 0;
 
     public: void update_position() {
+        position.x = 0;
+        position.y = 0;
+        position.theta = 0;
+
         while(true) {
             float imu_reading = inertial_sensor.get_heading();
+            if (imu_reading > 360) imu_reading = 0;
             float left_reading = left_encoder.get_position() / 100.0;
             float back_reading = back_encoder.get_position() / 100.0;
 
@@ -64,17 +68,15 @@ class Odom {
             float delta_theta = imu_reading - last_imu_reading;
 
             float delta_local_offset[2];
-            if (delta_theta == 0) {
+            if (fabs(delta_theta) < 0.0001) {
                 delta_local_offset[0] = delta_dist_back;
                 delta_local_offset[1] = delta_dist_left;
             }
             else {
                 const float constant = 2*sinf((delta_theta * M_PI) / 360);
-                std::cout << "thingy: " << delta_dist_back/delta_theta;
                 delta_local_offset[0] = constant * ( (delta_dist_back/delta_theta) + back_offset );
                 delta_local_offset[1] = constant * ( (delta_dist_left/delta_theta) + left_offset );
             }
-            std::cout << delta_local_offset[0] << " ";
 
             float avg_theta = last_imu_reading + (delta_theta / 2);
 
@@ -82,12 +84,12 @@ class Odom {
                 sqrtf( delta_local_offset[0] * delta_local_offset[0] + delta_local_offset[1] * delta_local_offset[1] ),
                 delta_local_offset[0] == 0
                     ? (delta_local_offset[1] > 0) ? 90 : -90
-                    : atanf( delta_local_offset[1] / delta_local_offset[0] )
+                    : atanf( delta_local_offset[1] / delta_local_offset[0] ) * (float) (180.0/M_PI)
             }; // distance, heading
             polar_delta_local_offset[1] += avg_theta;
             float delta_global_offset[2] = { // cartesian
-                polar_delta_local_offset[0] * cosf(polar_delta_local_offset[1]),
-                polar_delta_local_offset[0] * sinf(polar_delta_local_offset[1])
+                polar_delta_local_offset[0] * cosf(polar_delta_local_offset[1] * (M_PI / 180.0)),
+                polar_delta_local_offset[0] * sinf(polar_delta_local_offset[1] * (M_PI / 180.0))
             };
 
             position.x += delta_global_offset[0];
@@ -151,19 +153,25 @@ void opcontrol() {
         else intake_motor.move(0);
 
         if (controller.get_digital_new_press(DIGITAL_RIGHT)) {
-            if (lift_is_down) lift_target_pos = 6000;
+            if (lift_is_down) {
+                lift_target_pos = 6000;
+                lift_is_down = false;
+            }
             else lift_target_pos = 9000;
             move_lift_down = false;
         }
         if (controller.get_digital_new_press(DIGITAL_DOWN)) {
             lift_target_pos = 0;
             move_lift_down = true;
+            lift_is_down = true;
         }
 
         move_intake(lift_target_pos, move_lift_down);
 
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
+            std::cout << "inertial: " << inertial_sensor.get_rotation();
+            std::cout << "inertial: " << (inertial_sensor.get_rotation() > 366);
         }
         count++;
 
