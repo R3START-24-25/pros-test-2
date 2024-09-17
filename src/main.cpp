@@ -172,7 +172,7 @@ void opcontrol() {
     bool move_lift_down = false;
     bool lift_is_down = true;
 
-    test_odom();
+    //test_odom();
 
     while (true) {
         drive.movement();
