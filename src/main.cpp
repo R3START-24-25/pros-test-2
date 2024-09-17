@@ -37,7 +37,7 @@ class Position {
 
 Position position;
 
-class Odom {
+void track_robot() {
     const float left_offset = 0.8267;
     const float back_offset = 2.2047;
     const float wheel_diameter = 2; // inches
@@ -46,67 +46,66 @@ class Odom {
     float last_left_reading = 0;
     float last_back_reading = 0;
 
-    public: void update_position() {
-        position.x = 0;
-        position.y = 0;
-        position.theta = 0;
+    position.x = 0;
+    position.y = 0;
+    position.theta = 0;
 
-        while (inertial_sensor.is_calibrating()) pros::c::delay(10);
-        while (true) {
-            float imu_reading = inertial_sensor.get_heading();
-            if (imu_reading > 360) imu_reading = 0;
-            std::cout << "imu_reading: " << imu_reading << "\n";
-            float left_reading = left_encoder.get_position() / 100.0;
-            std::cout << "imu_reading: " << left_reading << "\n";
-            float back_reading = back_encoder.get_position() / 100.0;
-            std::cout << "imu_reading: " << back_reading << "\n";
-
-            float delta_imu = imu_reading - last_imu_reading;
-            float delta_left_reading = left_reading - last_left_reading;
-            float delta_back_reading = back_reading - last_back_reading;
-
-            float delta_dist_left = M_PI*wheel_diameter * (delta_left_reading/360);
-            float delta_dist_back = M_PI*wheel_diameter * (delta_back_reading/360);
-
-            position.theta = imu_reading;
-            float delta_theta = imu_reading - last_imu_reading;
-
-            float delta_local_offset[2];
-            if (fabs(delta_theta) < 0.0001) {
-                delta_local_offset[0] = delta_dist_back;
-                delta_local_offset[1] = delta_dist_left;
-            }
-            else {
-                const float constant = 2*sinf((delta_theta * M_PI) / 360);
-                delta_local_offset[0] = constant * ( (delta_dist_back/delta_theta) + back_offset );
-                delta_local_offset[1] = constant * ( (delta_dist_left/delta_theta) + left_offset );
-            }
-
-            float avg_theta = last_imu_reading + (delta_theta / 2);
-
-            float polar_delta_local_offset[2] = {
-                sqrtf( delta_local_offset[0] * delta_local_offset[0] + delta_local_offset[1] * delta_local_offset[1] ),
-                delta_local_offset[0] == 0
-                    ? (delta_local_offset[1] > 0) ? 90 : -90
-                    : atanf( delta_local_offset[1] / delta_local_offset[0] ) * (float) (180.0/M_PI)
-            }; // distance, heading
-            polar_delta_local_offset[1] += avg_theta;
-            float delta_global_offset[2] = { // cartesian
-                polar_delta_local_offset[0] * cosf(polar_delta_local_offset[1] * (M_PI / 180.0)),
-                polar_delta_local_offset[0] * sinf(polar_delta_local_offset[1] * (M_PI / 180.0))
-            };
-
-            position.x += delta_global_offset[0];
-            position.y += delta_global_offset[1];
-
-            last_imu_reading = imu_reading;
-            last_left_reading = left_reading;
-            last_back_reading = back_reading;
-
-            pros::c::delay(5);
-        }
+    while (inertial_sensor.is_calibrating()) {
+        pros::c::delay(10);
     }
-};
+
+	while (true) {
+        float imu_reading = inertial_sensor.get_heading();
+        if (imu_reading > 360) imu_reading = 0;
+        std::cout << "imu_reading: " << imu_reading << "\n";
+        float left_reading = left_encoder.get_position() / 100.0;
+        std::cout << "left_reading: " << left_reading << "\n";
+        float back_reading = back_encoder.get_position() / 100.0;
+        std::cout << "right_reading: " << back_reading << "\n";
+
+        float delta_imu = imu_reading - last_imu_reading;
+        float delta_left_reading = left_reading - last_left_reading;
+        float delta_back_reading = back_reading - last_back_reading;
+
+        float delta_dist_left = M_PI*wheel_diameter * (delta_left_reading/360);
+        float delta_dist_back = M_PI*wheel_diameter * (delta_back_reading/360);
+
+        position.theta = imu_reading;
+        float delta_theta = imu_reading - last_imu_reading;
+
+        float delta_local_offset[2];
+        if (fabs(delta_theta) < 0.0001) {
+            delta_local_offset[0] = delta_dist_back;
+            delta_local_offset[1] = delta_dist_left;
+        }
+        else {
+            const float constant = 2*sinf((delta_theta * M_PI) / 360);
+            delta_local_offset[0] = constant * ( (delta_dist_back/delta_theta) + back_offset );
+            delta_local_offset[1] = constant * ( (delta_dist_left/delta_theta) + left_offset );
+        }
+
+        float avg_theta = last_imu_reading + (delta_theta / 2);
+
+        float polar_delta_local_offset[2] = {
+            sqrtf( delta_local_offset[0] * delta_local_offset[0] + delta_local_offset[1] * delta_local_offset[1] ),
+            delta_local_offset[0] == 0
+                ? (delta_local_offset[1] > 0) ? 90 : -90
+                : atanf( delta_local_offset[1] / delta_local_offset[0] ) * (float) (180.0/M_PI)
+        }; // distance, heading
+        polar_delta_local_offset[1] += avg_theta;
+        float delta_global_offset[2] = { // cartesian
+            polar_delta_local_offset[0] * cosf(polar_delta_local_offset[1] * (M_PI / 180.0)),
+            polar_delta_local_offset[0] * sinf(polar_delta_local_offset[1] * (M_PI / 180.0))
+        };
+
+        position.x += delta_global_offset[0];
+        position.y += delta_global_offset[1];
+
+        last_imu_reading = imu_reading;
+        last_left_reading = left_reading;
+        last_back_reading = back_reading;
+    }
+}
 
 void move_intake(int position, bool move_down) {
     if (move_down) {
@@ -120,7 +119,6 @@ void move_intake(int position, bool move_down) {
 }
 
 void initialize() {
-    Odom odom;
     inertial_sensor.reset();
     inertial_sensor.set_heading(0);
     inertial_sensor.set_data_rate(5);
@@ -128,7 +126,8 @@ void initialize() {
     left_encoder.set_data_rate(5);
     back_encoder.reset_position();
     back_encoder.set_data_rate(5);
-    pros::Task odom_thread( [&odom]() {odom.update_position();} );
+
+    pros::Task odom_task(track_robot);
 
     lift_motor.set_brake_mode(pros::MotorBrake::hold);
 }
@@ -147,7 +146,7 @@ void opcontrol() {
     bool move_lift_down = false;
     bool lift_is_down = true;
 
-	while (true) {
+    while (true) {
         drive.movement();
 
         if (controller.get_digital_new_press(DIGITAL_R2) || controller.get_digital_new_press(DIGITAL_R1)) {
@@ -174,8 +173,6 @@ void opcontrol() {
         }
 
         move_intake(lift_target_pos, move_lift_down);
-
-        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << "\n";
 
         pros::delay(5);
     }
