@@ -1,6 +1,7 @@
 #include "pros/adi.hpp"
 #include "pros/imu.hpp"
 #include "pros/motor_group.hpp"
+#include "pros/rotation.hpp"
 
 #ifndef ROBOT_HPP
 
@@ -10,6 +11,10 @@ extern pros::MotorGroup left_drive_motors;
 extern pros::MotorGroup right_drive_motors;
 
 extern pros::adi::DigitalOut mogo_piston;
+
+extern pros::Rotation lift_rotation_sensor;
+extern pros::Motor lift_motor;
+extern pros::Motor intake_motor;
 
 extern pros::Imu inertial_sensor;
 
