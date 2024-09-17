@@ -57,11 +57,8 @@ void track_robot() {
 	while (true) {
         float imu_reading = inertial_sensor.get_heading();
         if (imu_reading > 360) imu_reading = 0;
-        std::cout << "imu_reading: " << imu_reading << "\n";
         float left_reading = left_encoder.get_position() / 100.0;
-        std::cout << "left_reading: " << left_reading << "\n";
         float back_reading = back_encoder.get_position() / 100.0;
-        std::cout << "right_reading: " << back_reading << "\n";
 
         float delta_imu = imu_reading - last_imu_reading;
         float delta_left_reading = left_reading - last_left_reading;
@@ -104,6 +101,8 @@ void track_robot() {
         last_imu_reading = imu_reading;
         last_left_reading = left_reading;
         last_back_reading = back_reading;
+
+        pros::delay(5);
     }
 }
 
@@ -118,14 +117,41 @@ void move_intake(int position, bool move_down) {
     }
 }
 
+void test_odom() {
+    while (inertial_sensor.is_calibrating()) pros::delay(100);
+    for (int i = 0; i < 10; i++) {
+        int counter = 0;
+        while (position.y > -0.3) {
+            counter++;
+            left_drive_motors.move(-50);
+            right_drive_motors.move(50);
+            if (counter % 25 == 0) std::cout << position.y << "\n";
+            pros::delay(5);
+        }
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+        pros::delay(500);
+        while (position.y > -0.6) {
+            counter++;
+            left_drive_motors.move(50);
+            right_drive_motors.move(-50);
+            if (counter % 25 == 0) std::cout << position.y << "\n";
+            pros::delay(5);
+        }
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+        pros::delay(500);
+    }
+}
+
 void initialize() {
-    inertial_sensor.reset();
-    inertial_sensor.set_heading(0);
-    inertial_sensor.set_data_rate(5);
     left_encoder.reset_position();
     left_encoder.set_data_rate(5);
     back_encoder.reset_position();
     back_encoder.set_data_rate(5);
+    inertial_sensor.reset();
+    inertial_sensor.set_heading(0);
+    inertial_sensor.set_data_rate(5);
 
     pros::Task odom_task(track_robot);
 
@@ -145,6 +171,8 @@ void opcontrol() {
     int lift_target_pos = 0;
     bool move_lift_down = false;
     bool lift_is_down = true;
+
+    test_odom();
 
     while (true) {
         drive.movement();
