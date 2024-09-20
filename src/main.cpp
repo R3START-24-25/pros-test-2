@@ -117,7 +117,7 @@ void test_odom() {
     while (inertial_sensor.is_calibrating()) pros::delay(100);
     for (int i = 0; i < 10; i++) {
         int counter = 0;
-        while (position.y > -0.3) {
+        while (position.y < 24) {
             counter++;
             left_drive_motors.move(-50);
             right_drive_motors.move(50);
@@ -127,7 +127,7 @@ void test_odom() {
         left_drive_motors.move(0);
         right_drive_motors.move(0);
         pros::delay(500);
-        while (position.y > -0.6) {
+        while (position.y > 0) {
             counter++;
             left_drive_motors.move(50);
             right_drive_motors.move(-50);
