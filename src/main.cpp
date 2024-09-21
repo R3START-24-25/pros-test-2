@@ -168,7 +168,7 @@ void opcontrol() {
     bool move_lift_down = false;
     bool lift_is_down = true;
 
-    //test_odom();
+    test_odom();
 
     while (true) {
         drive.movement();
@@ -197,6 +197,9 @@ void opcontrol() {
         }
 
         move_intake(lift_target_pos, move_lift_down);
+
+        if (count % 500 == 0) std::cout << position.x << " " << position.y << " " << position.theta << "\n";
+        count++;
 
         pros::delay(5);
     }
