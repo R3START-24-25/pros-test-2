@@ -114,33 +114,6 @@ void move_intake(int position, bool move_down) {
     }
 }
 
-void test_odom() {
-    while (inertial_sensor.is_calibrating()) pros::delay(100);
-    for (int i = 0; i < 10; i++) {
-        int counter = 0;
-        while (position.y < 24) {
-            counter++;
-            left_drive_motors.move(-50);
-            right_drive_motors.move(50);
-            if (counter % 25 == 0) std::cout << position.y << "\n";
-            pros::delay(5);
-        }
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-        pros::delay(500);
-        while (position.y > 0) {
-            counter++;
-            left_drive_motors.move(50);
-            right_drive_motors.move(-50);
-            if (counter % 25 == 0) std::cout << position.y << "\n";
-            pros::delay(5);
-        }
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-        pros::delay(500);
-    }
-}
-
 void turn_to(float heading, bool left) {
     float delta_theta = position.theta - heading;
     int velocity = left ? 50 : -50;
@@ -153,7 +126,21 @@ void turn_to(float heading, bool left) {
 }
 
 void move_to(float magnitude, bool x) {
-    if (!x) {
+    if (x) {
+        if (magnitude < position.x) {
+            while (magnitude < position.x) {
+                left_drive_motors.move(50);
+                right_drive_motors.move(-50);
+                pros::delay(5);
+            }
+        } else {
+            while (magnitude > position.x) {
+                left_drive_motors.move(-50);
+                right_drive_motors.move(50);
+                pros::delay(5);
+            }
+        }
+    } else {
         if (magnitude < position.y) {
             while (magnitude < position.y) {
                 left_drive_motors.move(50);
