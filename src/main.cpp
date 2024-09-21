@@ -1,4 +1,5 @@
 #include "main.h"
+#include "pros/abstract_motor.hpp"
 #include "pros/misc.h"
 #include "pros/rtos.hpp"
 #include "robot.hpp"
@@ -140,6 +141,37 @@ void test_odom() {
     }
 }
 
+void turn_to(float heading, bool left) {
+    float delta_theta = position.theta - heading;
+    int velocity = left ? 50 : -50;
+    while (inertial_sensor.get_heading() < heading - 2 || inertial_sensor.get_heading() > heading + 2) {
+        left_drive_motors.move(velocity);
+        right_drive_motors.move(velocity);
+    }
+    left_drive_motors.move(0);
+    right_drive_motors.move(0);
+}
+
+void move_to(float magnitude, bool x) {
+    if (!x) {
+        if (magnitude < position.y) {
+            while (magnitude < position.y) {
+                left_drive_motors.move(50);
+                right_drive_motors.move(-50);
+                pros::delay(5);
+            }
+        } else {
+            while (magnitude > position.y) {
+                left_drive_motors.move(-50);
+                right_drive_motors.move(50);
+                pros::delay(5);
+            }
+        }
+    }
+    left_drive_motors.move(0);
+    right_drive_motors.move(0);
+}
+
 void initialize() {
     left_encoder.reset_position();
     left_encoder.set_data_rate(5);
@@ -159,7 +191,19 @@ void disabled() {}
 // after init when in comp
 void competition_initialize() {}
 
+void autonomous() {
+    left_drive_motors.set_brake_mode(pros::MotorBrake::hold);
+    right_drive_motors.set_brake_mode(pros::MotorBrake::hold);
+
+    while (inertial_sensor.is_calibrating()) pros::delay(5);
+    move_to(24, false);
+    turn_to(90, false);
+}
+
 void opcontrol() {
+    left_drive_motors.set_brake_mode(pros::MotorBrake::coast);
+    right_drive_motors.set_brake_mode(pros::MotorBrake::coast);
+
     Drive drive;
     bool mogo_state = false;
     int count = 0;
@@ -167,8 +211,6 @@ void opcontrol() {
     int lift_target_pos = 0;
     bool move_lift_down = false;
     bool lift_is_down = true;
-
-    test_odom();
 
     while (true) {
         drive.movement();
@@ -191,7 +233,7 @@ void opcontrol() {
             move_lift_down = false;
         }
         if (controller.get_digital_new_press(DIGITAL_DOWN)) {
-            lift_target_pos = 0;
+            lift_target_pos = 3;
             move_lift_down = true;
             lift_is_down = true;
         }
