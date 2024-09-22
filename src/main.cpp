@@ -160,7 +160,7 @@ void turn_to(float heading, PID pid) {
         left_drive_motors.move(velocity);
         right_drive_motors.move(velocity);
 
-        if (fabs(velocity) < 0.1) break;
+        if (velocity == 0) break;
         pros::delay(pid.dt);
     }
 }
@@ -176,7 +176,7 @@ void move_to(float magnitude, char axis, PID pid) {
         left_drive_motors.move(pid_out * (forward ? -1 : 1));
         right_drive_motors.move(pid_out * (forward ? 1 : -1));
 
-        if (fabs(pid_out) < 0.1) break;
+        if (pid_out == 0) break;
         pros::delay(pid.dt);
     }
 }
