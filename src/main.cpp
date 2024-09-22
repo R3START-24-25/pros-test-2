@@ -35,8 +35,43 @@ class Position {
             float y = 0;
             float theta = 0;
 };
-
 Position position;
+
+class PID {
+    public: float kP;
+            float kI;
+            float kD;
+            float last_delta_position;
+            float integral;
+            float integral_threshold;
+            int dt;
+
+            PID(float kP, float kI, float kD, float integral_threshold, int dt) {
+                this->kP = kP;
+                this->kI = kI;
+                this->kD = kD;
+                this->integral_threshold = integral_threshold;
+                this->dt = dt;
+            }
+};
+
+float move_pid(PID pid, char axis, float target) {
+    float current_position = axis == 'x' ? position.x : axis == 'y' ? position.y : position.theta;
+    float delta_position = target - current_position;
+    if (axis == 't') {
+        if (delta_position > 180) delta_position -= 360;
+        else if (delta_position < - 180) delta_position += 360;
+    }
+    
+    pid.integral = fabs(delta_position) > 0.05 && delta_position < pid.integral_threshold
+        ? pid.integral + delta_position
+        : 0;
+    
+    float derivative = delta_position - pid.last_delta_position;
+    pid.last_delta_position = delta_position;
+
+    return (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+}
 
 void track_robot() {
     const float left_offset = 0.8267;
@@ -114,49 +149,36 @@ void move_intake(int position, bool move_down) {
     }
 }
 
-void turn_to(float heading, bool left) {
-    float delta_theta = position.theta - heading;
-    int velocity = left ? 50 : -50;
-    while (inertial_sensor.get_heading() < heading - 2 || inertial_sensor.get_heading() > heading + 2) {
+void turn_to(float heading, PID pid) {
+    float delta_theta = heading - position.theta;
+    bool left = delta_theta > 180 ? true : false;
+
+    while (true) {
+        float pid_out = move_pid(pid, 't', heading);
+        float velocity = left ? pid_out : -1 * pid_out;
+
         left_drive_motors.move(velocity);
         right_drive_motors.move(velocity);
+
+        if (fabs(velocity) < 0.1) break;
+        pros::delay(pid.dt);
     }
-    left_drive_motors.move(0);
-    right_drive_motors.move(0);
 }
 
-void move_to(float magnitude, bool x) {
-    if (x) {
-        if (magnitude < position.x) {
-            while (magnitude < position.x) {
-                left_drive_motors.move(50);
-                right_drive_motors.move(-50);
-                pros::delay(5);
-            }
-        } else {
-            while (magnitude > position.x) {
-                left_drive_motors.move(-50);
-                right_drive_motors.move(50);
-                pros::delay(5);
-            }
-        }
-    } else {
-        if (magnitude < position.y) {
-            while (magnitude < position.y) {
-                left_drive_motors.move(50);
-                right_drive_motors.move(-50);
-                pros::delay(5);
-            }
-        } else {
-            while (magnitude > position.y) {
-                left_drive_motors.move(-50);
-                right_drive_motors.move(50);
-                pros::delay(5);
-            }
-        }
+void move_to(float magnitude, char axis, PID pid) {
+    bool forward;
+
+    if (magnitude < position.x) forward = false;
+    else forward = true;
+
+    while (true) {
+        float pid_out = move_pid(pid, axis, magnitude);
+        left_drive_motors.move(pid_out * (forward ? -1 : 1));
+        right_drive_motors.move(pid_out * (forward ? 1 : -1));
+
+        if (fabs(pid_out) < 0.1) break;
+        pros::delay(pid.dt);
     }
-    left_drive_motors.move(0);
-    right_drive_motors.move(0);
 }
 
 void initialize() {
@@ -179,12 +201,15 @@ void disabled() {}
 void competition_initialize() {}
 
 void autonomous() {
+    PID move_pid(1, 0, 0, 12, 5);
+    PID turn_pid(1, 0, 0, 12, 5);
+
     left_drive_motors.set_brake_mode(pros::MotorBrake::hold);
     right_drive_motors.set_brake_mode(pros::MotorBrake::hold);
 
     while (inertial_sensor.is_calibrating()) pros::delay(5);
-    move_to(24, false);
-    turn_to(90, false);
+    move_to(24, 'y', move_pid);
+    turn_to(90, turn_pid);
 }
 
 void opcontrol() {
