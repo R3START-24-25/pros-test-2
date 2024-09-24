@@ -152,6 +152,7 @@ void move_intake(int position, bool move_down) {
 void turn_to(float heading, PID pid) {
     float delta_theta = heading - position.theta;
     bool left = delta_theta > 180 ? true : false;
+    int count = 0;
 
     while (true) {
         float pid_out = move_pid(pid, 't', heading);
@@ -160,23 +161,26 @@ void turn_to(float heading, PID pid) {
         left_drive_motors.move(velocity);
         right_drive_motors.move(velocity);
 
-        if (velocity == 0) break;
+        if (velocity == 0 || count == 1000) break;
+        count += pid.dt;
+
         pros::delay(pid.dt);
     }
 }
 
 void move_to(float magnitude, char axis, PID pid) {
-    bool forward;
-
-    if (magnitude < position.x) forward = false;
-    else forward = true;
+    int count = 0;
 
     while (true) {
         float pid_out = move_pid(pid, axis, magnitude);
-        left_drive_motors.move(pid_out * (forward ? -1 : 1));
-        right_drive_motors.move(pid_out * (forward ? 1 : -1));
+        left_drive_motors.move(3.5 * pid_out * -1);
+        right_drive_motors.move(3.5 * pid_out);
 
-        if (pid_out == 0) break;
+        float pos = axis == 'x' ? position.x : position.y;
+        if (magnitude > pos + 0.1 && magnitude < pos - 0.1) break;
+        if (fabs(pid_out) < 0.5 || count == 1000) break;
+        count += pid.dt;
+
         pros::delay(pid.dt);
     }
 }
@@ -201,15 +205,23 @@ void disabled() {}
 void competition_initialize() {}
 
 void autonomous() {
-    PID move_pid(1, 0, 0, 12, 5);
-    PID turn_pid(1, 0, 0, 12, 5);
+    PID xy_pid(1, 0, 0.25, 12, 5);
+    PID turn_pid(0.9, 0.25, 0, 12, 5);
 
     left_drive_motors.set_brake_mode(pros::MotorBrake::hold);
     right_drive_motors.set_brake_mode(pros::MotorBrake::hold);
 
     while (inertial_sensor.is_calibrating()) pros::delay(5);
-    move_to(24, 'y', move_pid);
+
+    mogo_piston.set_value(true);
+    move_to(-24, 'y', xy_pid);
+    std::cout << position.x << " " << position.y << " " << position.theta << "\n";
+    mogo_piston.set_value(false);
+    move_to(-25, 'y', xy_pid);
     turn_to(90, turn_pid);
+    std::cout << position.x << " " << position.y << " " << position.theta << "\n";
+    intake_motor.move(-127);
+    move_to(15, 'x', xy_pid);
 }
 
 void opcontrol() {
