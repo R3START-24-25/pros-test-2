@@ -60,7 +60,7 @@ float move_pid(PID pid, char axis, float target) {
     float delta_position = target - current_position;
     if (axis == 't') {
         if (delta_position > 180) delta_position -= 360;
-        else if (delta_position < - 180) delta_position += 360;
+        else if (delta_position < -180) delta_position += 360;
     }
     
     pid.integral = fabs(delta_position) > 0.05 && delta_position < pid.integral_threshold
@@ -68,9 +68,13 @@ float move_pid(PID pid, char axis, float target) {
         : 0;
     
     float derivative = delta_position - pid.last_delta_position;
+
+    //if (delta_position > 0 && pid.last_delta_position < 0 || delta_position < 0 && pid.last_delta_position > 0) return 0;
     pid.last_delta_position = delta_position;
 
-    return (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+    float p_i_d = (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+    if (fabs(p_i_d) < 0.1 && fabs(delta_position) < 0.2) return 0;
+    return p_i_d;
 }
 
 void track_robot() {
@@ -149,36 +153,43 @@ void move_intake(int position, bool move_down) {
     }
 }
 
-void turn_to(float heading, PID pid) {
+void turn_to(float heading, PID pid, float speed) {
     float delta_theta = heading - position.theta;
-    bool left = delta_theta > 180 ? true : false;
+    bool left = delta_theta > 180 ? false : true;
     int count = 0;
 
     while (true) {
-        float pid_out = move_pid(pid, 't', heading);
-        float velocity = left ? pid_out : -1 * pid_out;
+        //float pid_out = move_pid(pid, 't', heading);
+        //float velocity = pid_out;
 
-        left_drive_motors.move(velocity);
-        right_drive_motors.move(velocity);
+        float velocity = left ? -70 : 70;
 
-        if (velocity == 0 || count == 1000) break;
+        left_drive_motors.move(speed * velocity);
+        right_drive_motors.move(speed * velocity);
+
+        if (fabs(velocity) < 0.1 || count == 1000) break;
+        if (position.theta > heading - 2 && position.theta < heading + 2) break;
+        std::cout << "t: " << position.theta << "heading: " << heading << "\n";
+
         count += pid.dt;
 
         pros::delay(pid.dt);
     }
+    left_drive_motors.move(0);
+    right_drive_motors.move(0);
 }
 
-void move_to(float magnitude, char axis, PID pid) {
+void move_to(float magnitude, char axis, PID pid, float speed) {
     int count = 0;
+    int multi = axis == 'x' ? -1 : 1;
 
     while (true) {
         float pid_out = move_pid(pid, axis, magnitude);
-        left_drive_motors.move(3.5 * pid_out * -1);
-        right_drive_motors.move(3.5 * pid_out);
+        left_drive_motors.move(speed * pid_out * -1 * multi);
+        right_drive_motors.move(speed * pid_out * multi);
 
         float pos = axis == 'x' ? position.x : position.y;
-        if (magnitude > pos + 0.1 && magnitude < pos - 0.1) break;
-        if (fabs(pid_out) < 0.5 || count == 1000) break;
+        if (pid_out == 0 || count == 1000) break;
         count += pid.dt;
 
         pros::delay(pid.dt);
@@ -206,7 +217,7 @@ void competition_initialize() {}
 
 void autonomous() {
     PID xy_pid(1, 0, 0.25, 12, 5);
-    PID turn_pid(0.9, 0.25, 0, 12, 5);
+    PID turn_pid(0.6, 0, 0, 12, 5);
 
     left_drive_motors.set_brake_mode(pros::MotorBrake::hold);
     right_drive_motors.set_brake_mode(pros::MotorBrake::hold);
@@ -214,14 +225,22 @@ void autonomous() {
     while (inertial_sensor.is_calibrating()) pros::delay(5);
 
     mogo_piston.set_value(true);
-    move_to(-24, 'y', xy_pid);
+    move_to(-22, 'y', xy_pid, 3.5);
     std::cout << position.x << " " << position.y << " " << position.theta << "\n";
     mogo_piston.set_value(false);
-    move_to(-25, 'y', xy_pid);
-    turn_to(90, turn_pid);
+    move_to(-29, 'y', xy_pid, 3.5);
+    std::cout << position.x << " " << position.y << " " << position.theta << "\n";
+    turn_to(305, turn_pid, 0.7); // 270 degrees
     std::cout << position.x << " " << position.y << " " << position.theta << "\n";
     intake_motor.move(-127);
-    move_to(15, 'x', xy_pid);
+    move_to(-20, 'x', xy_pid, 3.5);
+    //
+    turn_to(330, turn_pid, 0.7); // 0 d
+    move_to(-5, 'y', xy_pid, 3.5);
+    turn_to(73, turn_pid, 0.7); // 90 d
+    //intake_motor.move(127); // outtake
+    move_to(18, 'x', xy_pid, 3.5);
+    //intake_motor.move(-127);
 }
 
 void opcontrol() {
