@@ -169,7 +169,6 @@ void turn_to(float heading, PID pid, float speed) {
 
         if (fabs(velocity) < 0.1 || count == 1000) break;
         if (position.theta > heading - 2 && position.theta < heading + 2) break;
-        std::cout << "t: " << position.theta << "heading: " << heading << "\n";
 
         count += pid.dt;
 
@@ -225,22 +224,19 @@ void autonomous() {
     while (inertial_sensor.is_calibrating()) pros::delay(5);
 
     mogo_piston.set_value(true);
-    move_to(-22, 'y', xy_pid, 3.5);
-    std::cout << position.x << " " << position.y << " " << position.theta << "\n";
+    move_to(-21, 'y', xy_pid, 3.5);
     mogo_piston.set_value(false);
+    // mogo picked up
     move_to(-29, 'y', xy_pid, 3.5);
-    std::cout << position.x << " " << position.y << " " << position.theta << "\n";
-    turn_to(305, turn_pid, 0.7); // 270 degrees
-    std::cout << position.x << " " << position.y << " " << position.theta << "\n";
     intake_motor.move(-127);
-    move_to(-20, 'x', xy_pid, 3.5);
-    //
+    turn_to(302, turn_pid, 0.7); // 270 degrees
+    move_to(-24, 'x', xy_pid, 3.5);
+    // ring picked up
     turn_to(330, turn_pid, 0.7); // 0 d
     move_to(-5, 'y', xy_pid, 3.5);
-    turn_to(73, turn_pid, 0.7); // 90 d
-    //intake_motor.move(127); // outtake
-    move_to(18, 'x', xy_pid, 3.5);
-    //intake_motor.move(-127);
+    turn_to(55, turn_pid, 0.7); // 90 d
+    move_to(18, 'x', xy_pid, -3.5);
+    mogo_piston.set_value(true);
 }
 
 void opcontrol() {
