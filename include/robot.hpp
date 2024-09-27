@@ -20,7 +20,7 @@ extern pros::Imu inertial_sensor;
 extern pros::Rotation left_encoder;
 extern pros::Rotation back_encoder;
 
-extern pros::Motor intake_motor;
+extern pros::MotorGroup intake_motor;
 
 extern pros::Optical optical_sensor;
 extern pros::Distance distance_sensor;

@@ -4,6 +4,7 @@
 #include "pros/rtos.hpp"
 #include "robot.hpp"
 #include <cmath>
+#include <ostream>
 
 class Drive {
     const double EulerConstant = std::exp(1.0);
@@ -146,7 +147,9 @@ bool reversing = false;
 bool blue = true;
 void colour_sensor_thread() {
     while (true) {
-        if ( (blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 150) ) {
+        if ( optical_sensor.get_proximity() > 200 && (blue && optical_sensor.get_rgb().red > 230) || (!blue && optical_sensor.get_rgb().blue > 230) ) {
+            std::cout << "red " << optical_sensor.get_rgb().red << std::endl;
+            std::cout << "prox " << optical_sensor.get_proximity() << std::endl;
             reversing = true;
             intake_motor.move(127);
             pros::delay(1000);
@@ -198,6 +201,30 @@ void move_to(float magnitude, char axis, PID pid, float speed) {
     }
 }
 
+bool blue_in_check = false;
+
+void lil_reverse() {
+    while (true) {
+        if (distance_sensor.get_distance() < 15 && !blue_in_check) {
+            pros::delay(650);
+            intake_motor.move(127);
+            pros::delay(250);
+            intake_motor.move(-127);
+        }
+
+        if (blue_in_check) {
+            while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
+            pros::delay(1000);
+            while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
+            pros::delay(2000);
+            intake_motor.move(0);
+            blue_in_check = false;
+            pros::delay(4000);
+        }
+        pros::delay(20);
+    }
+}
+
 void initialize() {
     left_encoder.reset_position();
     left_encoder.set_data_rate(5);
@@ -208,9 +235,10 @@ void initialize() {
     inertial_sensor.set_data_rate(5);
 
     pros::Task odom_task(track_robot);
+    pros::Task lil_reverse_task(lil_reverse);
 
-    optical_sensor.set_led_pwm(10);
-    pros::Task optical_task(colour_sensor_thread);
+    //optical_sensor.set_led_pwm(10);
+    //pros::Task optical_task(colour_sensor_thread);
 }
 
 void disabled() {}
@@ -228,29 +256,53 @@ void autonomous() {
     while (inertial_sensor.is_calibrating()) pros::delay(5);
 
     mogo_piston.set_value(true);
-    move_to(-21, 'y', xy_pid, 3.5);
+    move_to(-19, 'y', xy_pid, 3.5);
+    turn_to(347, turn_pid, 0.7); // 335 degrees
+        left_drive_motors.move(50);
+        right_drive_motors.move(-50);
+        while (position.y > -20.5) pros::delay(5);
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+    //move_to(-23, 'y', xy_pid, 3.5);
     mogo_piston.set_value(false);
     // mogo picked up
-    move_to(-29, 'y', xy_pid, 3.5);
+    //turn_to(350, turn_pid, 0.7); // 360 degrees
+    //move_to(-27, 'y', xy_pid, 3.5);
     intake_motor.move(-127);
-    turn_to(302, turn_pid, 0.7); // 270 degrees
-    move_to(-24, 'x', xy_pid, 3.5);
+    turn_to(295, turn_pid, -0.7); // 230 degrees
+    move_to(-21, 'x', xy_pid, 3.5);
     // ring picked up
     turn_to(330, turn_pid, 0.7); // 0 d
     move_to(-5, 'y', xy_pid, 3.5);
     turn_to(55, turn_pid, 0.7); // 90 d
-    move_to(10, 'x', xy_pid, -3.5);
+    move_to(16, 'x', xy_pid, -3.5);
     mogo_piston.set_value(true);
-    intake_lift_piston.set_value(true);
-    move_to(19, 'x', xy_pid, -3.5);
-    intake_lift_piston.set_value(false);
-    // ring picked up (in front of stake)
-    while (distance_sensor.get() > 50) pros::delay(5);
-    intake_motor.move(0);
-    move_to(22, 'x', xy_pid, -3.5);
-    move_to(48, 'x', xy_pid, -3.5);
+    //intake_lift_piston.set_value(true);
+    blue_in_check = true;
+        left_drive_motors.move(-50);
+        right_drive_motors.move(50);
+        while (position.x < 38) pros::delay(5);
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
     mogo_piston.set_value(false);
-    move_to(72, 'x', xy_pid, -3.5);
+    turn_to(200, turn_pid, 0.7); // 230 d
+        left_drive_motors.move(50);
+        right_drive_motors.move(-50);
+        while (position.y < 24) pros::delay(5);
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+    mogo_piston.set_value(true);
+    /*
+    //intake_lift_piston.set_value(false);
+    // ring picked up (in front of stake)
+    // while (distance_sensor.get() > 50) pros::delay(5);
+    intake_motor.move(0);
+    //move_to(33, 'x', xy_pid, -3.5);
+    mogo_piston.set_value(false);
+    turn_to(30, turn_pid, 0.7); // 0 d
+    move_to(-24, 'y', xy_pid, 3.5);
+    mogo_piston.set_value(false);
+    */
 }
 
 void opcontrol() {
