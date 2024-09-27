@@ -142,6 +142,20 @@ void track_robot() {
     }
 }
 
+bool reversing = false;
+bool blue = true;
+void colour_sensor_thread() {
+    while (true) {
+        if ( (blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 150) ) {
+            reversing = true;
+            intake_motor.move(127);
+            pros::delay(1000);
+        } else reversing = false;
+
+        pros::delay(5);
+    }
+}
+
 void move_intake(int position, bool move_down) {
     if (move_down) {
         if (lift_rotation_sensor.get_position() < position) lift_motor.move(0);
@@ -207,6 +221,9 @@ void initialize() {
     pros::Task odom_task(track_robot);
 
     lift_motor.set_brake_mode(pros::MotorBrake::hold);
+
+    optical_sensor.set_led_pwm(10);
+    pros::Task optical_task(colour_sensor_thread);
 }
 
 void disabled() {}
@@ -235,8 +252,18 @@ void autonomous() {
     turn_to(330, turn_pid, 0.7); // 0 d
     move_to(-5, 'y', xy_pid, 3.5);
     turn_to(55, turn_pid, 0.7); // 90 d
-    move_to(18, 'x', xy_pid, -3.5);
+    move_to(10, 'x', xy_pid, -3.5);
     mogo_piston.set_value(true);
+    intake_lift_piston.set_value(true);
+    move_to(19, 'x', xy_pid, -3.5);
+    intake_lift_piston.set_value(false);
+    // ring picked up (in front of stake)
+    while (distance_sensor.get() > 50) pros::delay(5);
+    intake_motor.move(0);
+    move_to(22, 'x', xy_pid, -3.5);
+    move_to(48, 'x', xy_pid, -3.5);
+    mogo_piston.set_value(false);
+    move_to(72, 'x', xy_pid, -3.5);
 }
 
 void opcontrol() {
@@ -254,14 +281,14 @@ void opcontrol() {
     while (true) {
         drive.movement();
 
-        if (controller.get_digital_new_press(DIGITAL_R2) || controller.get_digital_new_press(DIGITAL_R1)) {
+        if (controller.get_digital_new_press(DIGITAL_R1)) {
             mogo_state = !mogo_state;
             mogo_piston.set_value(mogo_state);
         }
 
         if (controller.get_digital(DIGITAL_L1)) intake_motor.move(127);
-        else if (controller.get_digital(DIGITAL_L2)) intake_motor.move(-127);
-        else intake_motor.move(0);
+        else if (controller.get_digital(DIGITAL_L2) && !reversing) intake_motor.move(-127);
+        else if (!reversing) intake_motor.move(0);
 
         if (controller.get_digital_new_press(DIGITAL_RIGHT)) {
             if (lift_is_down) {
@@ -276,6 +303,9 @@ void opcontrol() {
             move_lift_down = true;
             lift_is_down = true;
         }
+
+        if (controller.get_digital(DIGITAL_R2)) claw_lift_piston.set_value(true);
+        else claw_lift_piston.set_value(false);
 
         move_intake(lift_target_pos, move_lift_down);
 
