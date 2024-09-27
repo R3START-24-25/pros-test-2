@@ -18,8 +18,6 @@ pros::Imu inertial_sensor(14);
 pros::Rotation left_encoder(16);
 pros::Rotation back_encoder(15);
 
-pros::Rotation lift_rotation_sensor(21);
-pros::Motor lift_motor(1);
 pros::Motor intake_motor(10);
 
 pros::Optical optical_sensor(1);

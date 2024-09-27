@@ -156,17 +156,6 @@ void colour_sensor_thread() {
     }
 }
 
-void move_intake(int position, bool move_down) {
-    if (move_down) {
-        if (lift_rotation_sensor.get_position() < position) lift_motor.move(0);
-        else lift_motor.move(-127);
-    }
-    else {
-        if (lift_rotation_sensor.get_position() > position) lift_motor.move(0);
-        else lift_motor.move(127);
-    }
-}
-
 void turn_to(float heading, PID pid, float speed) {
     float delta_theta = heading - position.theta;
     bool left = delta_theta > 180 ? false : true;
@@ -219,8 +208,6 @@ void initialize() {
     inertial_sensor.set_data_rate(5);
 
     pros::Task odom_task(track_robot);
-
-    lift_motor.set_brake_mode(pros::MotorBrake::hold);
 
     optical_sensor.set_led_pwm(10);
     pros::Task optical_task(colour_sensor_thread);
@@ -290,24 +277,8 @@ void opcontrol() {
         else if (controller.get_digital(DIGITAL_L2) && !reversing) intake_motor.move(-127);
         else if (!reversing) intake_motor.move(0);
 
-        if (controller.get_digital_new_press(DIGITAL_RIGHT)) {
-            if (lift_is_down) {
-                lift_target_pos = 6000;
-                lift_is_down = false;
-            }
-            else lift_target_pos = 9000;
-            move_lift_down = false;
-        }
-        if (controller.get_digital_new_press(DIGITAL_DOWN)) {
-            lift_target_pos = 3;
-            move_lift_down = true;
-            lift_is_down = true;
-        }
-
         if (controller.get_digital(DIGITAL_R2)) claw_lift_piston.set_value(true);
         else claw_lift_piston.set_value(false);
-
-        move_intake(lift_target_pos, move_lift_down);
 
         if (count % 500 == 0) std::cout << position.x << " " << position.y << " " << position.theta << "\n";
         count++;
