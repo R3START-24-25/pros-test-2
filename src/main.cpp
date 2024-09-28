@@ -213,10 +213,10 @@ void lil_reverse() {
         }
 
         if (blue_in_check) {
+            //while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
+            //pros::delay(1000);
             while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
             pros::delay(1000);
-            while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
-            pros::delay(2000);
             intake_motor.move(0);
             blue_in_check = false;
             pros::delay(4000);
@@ -281,17 +281,48 @@ void autonomous() {
     blue_in_check = true;
         left_drive_motors.move(-50);
         right_drive_motors.move(50);
-        while (position.x < 38) pros::delay(5);
+        while (position.x < 47.9) pros::delay(5); // position.x <39
+        intake_motor.move(0);
+        while (position.x < 48) pros::delay(5);
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+    //reversing back to 39
+        left_drive_motors.move(50);
+        right_drive_motors.move(-50);
+        while (position.x > 43.625) pros::delay(5);
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+    //mogo_piston.set_value(false);
+    
+    turn_to(15, turn_pid, 0.7); // 70 d
+        left_drive_motors.move(50);
+        right_drive_motors.move(-50);
+        while (position.y > -21.5) pros::delay(5);
         left_drive_motors.move(0);
         right_drive_motors.move(0);
     mogo_piston.set_value(false);
-    turn_to(200, turn_pid, 0.7); // 230 d
+
+    pros::delay(500);
+    //intake_motor.move(-127);
+    turn_to(359, turn_pid, 0.7); // 70 d
         left_drive_motors.move(50);
         right_drive_motors.move(-50);
-        while (position.y < 24) pros::delay(5);
+        while (position.y < -27) pros::delay(5);
         left_drive_motors.move(0);
         right_drive_motors.move(0);
-    mogo_piston.set_value(true);
+    intake_motor.move(-127);
+
+/*
+    
+        left_drive_motors.move(50);
+        right_drive_motors.move(-50);
+        while (position.y > -19.5) pros::delay(5);
+        left_drive_motors.move(0);
+        right_drive_motors.move(0);
+    mogo_piston.set_value(false);
+    
+   */
+  
     /*
     //intake_lift_piston.set_value(false);
     // ring picked up (in front of stake)
