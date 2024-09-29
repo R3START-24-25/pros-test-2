@@ -258,17 +258,6 @@ void autonomous() {
     while (inertial_sensor.is_calibrating()) pros::delay(5);
 
     mogo_piston.set_value(true);
-    if (skills) {
-        move_to(-4, 'y', xy_pid, 3.5);
-        mogo_piston.set_value(false);
-        turn_to(73, turn_pid, 0.7);
-        move_to(-48, 'x', xy_pid, -3.5);
-        intake_motor.move(-127);
-        pros::delay(4000);
-        mogo_piston.set_value(true);
-        pros::delay(2000);
-        move_to(1, 'x', xy_pid, -3.5);
-    } else {
     move_to(-19, 'y', xy_pid, 3.5);
     turn_to(blue ? 347 : 13, turn_pid, 0.7); // 335 degrees
         left_drive_motors.move(50);
@@ -282,10 +271,15 @@ void autonomous() {
     //
     //
     turn_to(blue ? 295 : 65, turn_pid, -0.7); // 230 degrees
-    move_to(blue ? -22.5 : 22.5, 'x', xy_pid, 3.5);
+    //move_to(blue ? -22.5 : 22.5, 'x', xy_pid, 3.5);
+    move_to(-23.5, 'x', xy_pid, 3.5);
     // ring picked up
     turn_to(blue ? 330 : 30, turn_pid, 0.7); // 0 d
-    move_to(-5, 'y', xy_pid, 3.5);
+    move_to(-2, 'y', xy_pid, 3.5);
+    left_drive_motors.move(0);
+    right_drive_motors.move(0);
+    //////////
+    /*
     turn_to(blue ? 51.5 : 308.5, turn_pid, 0.7); // 90 d
     move_to(blue ? 16 : -16, 'x', xy_pid, -3.5);
     mogo_piston.set_value(true);
@@ -333,7 +327,7 @@ void autonomous() {
         left_drive_motors.move(0);
         right_drive_motors.move(0);
     intake_motor.move(-127);
-    }
+    */
 }
 
 void opcontrol() {
