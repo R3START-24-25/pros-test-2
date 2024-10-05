@@ -25,5 +25,11 @@ extern pros::MotorGroup intake_motor;
 extern pros::Optical optical_sensor;
 extern pros::Distance distance_sensor;
 
+class Position {
+    public: float x = 0;
+            float y = 0;
+            float theta = 0;
+};
+
 #define ROBOT_HPP
 #endif

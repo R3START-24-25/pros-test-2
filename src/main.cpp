@@ -31,11 +31,6 @@ class Drive {
     }
 };
 
-class Position {
-    public: float x = 0;
-            float y = 0;
-            float theta = 0;
-};
 Position position;
 
 class PID {
@@ -70,11 +65,9 @@ float move_pid(PID pid, char axis, float target) {
     
     float derivative = delta_position - pid.last_delta_position;
 
-    //if (delta_position > 0 && pid.last_delta_position < 0 || delta_position < 0 && pid.last_delta_position > 0) return 0;
     pid.last_delta_position = delta_position;
 
     float p_i_d = (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
-    if (fabs(p_i_d) < 0.1 && fabs(delta_position) < 0.2) return 0;
     return p_i_d;
 }
 
@@ -159,49 +152,6 @@ void colour_sensor_thread() {
     }
 }
 
-void turn_to(float heading, PID pid, float speed) {
-    if (position.theta > 358) position.theta = 0.1;
-    float delta_theta = heading - position.theta;
-    bool left = delta_theta > 180 ? false : true;
-    int count = 0;
-
-    while (true) {
-        //float pid_out = move_pid(pid, 't', heading);
-        //float velocity = pid_out;
-
-        float velocity = left ? -70 : 70;
-
-        left_drive_motors.move(speed * velocity);
-        right_drive_motors.move(speed * velocity);
-
-        if (fabs(velocity) < 0.1 || count == 1000) break;
-        if (position.theta > heading - 2 && position.theta < heading + 2) break;
-
-        count += pid.dt;
-
-        pros::delay(pid.dt);
-    }
-    left_drive_motors.move(0);
-    right_drive_motors.move(0);
-}
-
-void move_to(float magnitude, char axis, PID pid, float speed) {
-    int count = 0;
-    int multi = axis == 'x' ? -1 : 1;
-
-    while (true) {
-        float pid_out = move_pid(pid, axis, magnitude);
-        left_drive_motors.move(speed * pid_out * -1 * multi);
-        right_drive_motors.move(speed * pid_out * multi);
-
-        float pos = axis == 'x' ? position.x : position.y;
-        if (pid_out == 0 || count == 1000) break;
-        count += pid.dt;
-
-        pros::delay(pid.dt);
-    }
-}
-
 bool blue_in_check = false;
 
 void lil_reverse() {
@@ -214,8 +164,6 @@ void lil_reverse() {
         }
 
         if (blue_in_check) {
-            //while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
-            //pros::delay(1000);
             while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
             pros::delay(1000);
             intake_motor.move(0);
@@ -254,80 +202,7 @@ void autonomous() {
 
     left_drive_motors.set_brake_mode(pros::MotorBrake::hold);
     right_drive_motors.set_brake_mode(pros::MotorBrake::hold);
-
     while (inertial_sensor.is_calibrating()) pros::delay(5);
-
-    mogo_piston.set_value(true);
-    move_to(-19, 'y', xy_pid, 3.5);
-    turn_to(blue ? 347 : 13, turn_pid, 0.7); // 335 degrees
-        left_drive_motors.move(50);
-        right_drive_motors.move(-50);
-        while (position.y > -20.5) pros::delay(5);
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-    mogo_piston.set_value(false);
-    // mogo picked up
-    intake_motor.move(-127);
-    //
-    //
-    turn_to(blue ? 295 : 65, turn_pid, -0.7); // 230 degrees
-    //move_to(blue ? -22.5 : 22.5, 'x', xy_pid, 3.5);
-    move_to(-23.5, 'x', xy_pid, 3.5);
-    // ring picked up
-    turn_to(blue ? 330 : 30, turn_pid, 0.7); // 0 d
-    move_to(-2, 'y', xy_pid, 3.5);
-    left_drive_motors.move(0);
-    right_drive_motors.move(0);
-    //////////
-    /*
-    turn_to(blue ? 51.5 : 308.5, turn_pid, 0.7); // 90 d
-    move_to(blue ? 16 : -16, 'x', xy_pid, -3.5);
-    mogo_piston.set_value(true);
-    blue_in_check = true;
-        left_drive_motors.move(-50);
-        right_drive_motors.move(50);
-        if (blue) {
-            while (position.x < 47.9) pros::delay(5); // position.x <39
-            intake_motor.move(0);
-            while (position.x < 48) pros::delay(5);
-        } else {
-            while (position.x > -47.9) pros::delay(5); // position.x <39
-            intake_motor.move(0);
-            while (position.x > -48) pros::delay(5);
-        }
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-    //reversing back to 39
-        left_drive_motors.move(50);
-        right_drive_motors.move(-50);
-        if (blue) {
-            while (position.x > 42) pros::delay(5);
-        } else {
-            while (position.x < -42) pros::delay(5);
-        }
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-    //mogo_piston.set_value(false);
-    
-    turn_to(blue ? 20 : 340, turn_pid, -0.7); // 70 d
-    // turn to face mogo
-        left_drive_motors.move(50);
-        right_drive_motors.move(-50);
-        while (position.y > -22) pros::delay(5);
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-    mogo_piston.set_value(false);
-    // pick up mogo
-    pros::delay(500);
-    //intake_motor.move(-127);
-    turn_to(blue ? 355: 5, turn_pid, 0.7); // 70 d
-        left_drive_motors.move(-50);
-        right_drive_motors.move(50);
-        while (position.y < -26) pros::delay(5); // TUNE
-        left_drive_motors.move(0);
-        right_drive_motors.move(0);
-    intake_motor.move(-127);
-    */
 }
 
 void opcontrol() {
