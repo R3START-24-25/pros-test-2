@@ -4,6 +4,10 @@
 
 class Point {
     public: double x, y;
+            Point(double X, double Y) {
+                x = X; y = Y;
+            }
+            Point();
 };
 
 class Intersects {
@@ -69,7 +73,17 @@ Point find_target(Position pos, Point path[], int *last_found_index, double look
         return find_target(pos, path, &++(*last_found_index), look_ahead);
     }
 
-    // rest of code
+    double intersect_1_dist = sqrt((path[*last_found_index].x - intersects.x1)*(path[*last_found_index].x - intersects.x1) + (path[*last_found_index].y - intersects.y1)*(path[*last_found_index].y - intersects.y1));
+    double intersect_1_dist = dist_between_pts(Point(path[*last_found_index].x, path[*last_found_index].y]), Point(intersects.x1, intersects.y1));
+    double intersect_2_dist = sqrt((path[*last_found_index].x - intersects.x2)*(path[*last_found_index].x - intersects.x2) + (path[*last_found_index].y - intersects.y2)*(path[*last_found_index].y - intersects.y2));
+
+    if (intersect_1_dist > intersect_2_dist) {
+        target.x = intersects.x2;
+        target.y = intersects.y2;
+    } else {
+        target.x = intersects.x1;
+        target.y = intersects.y1;
+    }
 
     return target;
 }
