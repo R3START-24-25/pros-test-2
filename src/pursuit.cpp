@@ -69,13 +69,12 @@ Point find_target(Position pos, Point path[], int *last_found_index, double look
     Point target;
     Intersects intersects = line_circle_intersect(pos, path[*last_found_index], path[*last_found_index+1], look_ahead);
     
-    if (!(intersects.xy1 || intersects.xy2)) {
-        return find_target(pos, path, &++(*last_found_index), look_ahead);
-    }
+    if (!(intersects.xy1 || intersects.xy2)) return find_target(pos, path, &++(*last_found_index), look_ahead);
 
-    double intersect_1_dist = sqrt((path[*last_found_index].x - intersects.x1)*(path[*last_found_index].x - intersects.x1) + (path[*last_found_index].y - intersects.y1)*(path[*last_found_index].y - intersects.y1));
-    double intersect_1_dist = dist_between_pts(Point(path[*last_found_index].x, path[*last_found_index].y]), Point(intersects.x1, intersects.y1));
-    double intersect_2_dist = sqrt((path[*last_found_index].x - intersects.x2)*(path[*last_found_index].x - intersects.x2) + (path[*last_found_index].y - intersects.y2)*(path[*last_found_index].y - intersects.y2));
+    Point intersects_1 = Point(intersects.x1, intersects.y1);
+    Point intersects_2 = Point(intersects.x2, intersects.y2);
+    double intersect_1_dist = dist_between_pts(path[*last_found_index+1], intersects_1);
+    double intersect_2_dist = dist_between_pts(path[*last_found_index+1], intersects_2);
 
     if (intersect_1_dist > intersect_2_dist) {
         target.x = intersects.x2;
@@ -84,6 +83,12 @@ Point find_target(Position pos, Point path[], int *last_found_index, double look
         target.x = intersects.x1;
         target.y = intersects.y1;
     }
+    
+    Point robot_pos = Point(pos.x, pos.y);
+    double bot_to_path    = dist_between_pts(path[*last_found_index+1], target);
+    double target_to_path = dist_between_pts(path[*last_found_index+1], target);
+
+    if (target_to_path > bot_to_path) return find_target(pos, path, &++(*last_found_index), look_ahead);
 
     return target;
 }
