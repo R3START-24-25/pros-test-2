@@ -4,7 +4,7 @@
 #include "pros/rtos.hpp"
 #include "robot.hpp"
 #include <cmath>
-#include <iostream>
+#include "pursuit.cpp"
 
 class Drive {
     const double EulerConstant = std::exp(1.0);
@@ -30,8 +30,6 @@ class Drive {
         right_drive_motors.move(-turn + dir);
     }
 };
-
-Position position;
 
 class PID {
     public: float kP;
@@ -198,7 +196,9 @@ void disabled() {}
 void competition_initialize() {}
 
 bool skills = true;
-void autonomous();
+void autonomous() {
+    pure_pursuit();
+}
 
 void opcontrol() {
     left_drive_motors.set_brake_mode(pros::MotorBrake::coast);

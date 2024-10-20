@@ -30,5 +30,7 @@ class Position {
             float theta = 0;
 };
 
+extern Position position;
+
 #define ROBOT_HPP
 #endif

@@ -125,7 +125,6 @@ void pure_pursuit() {
         Point(14.0, 35.9),
         Point(18.4, 35.1),
     };
-    Position position;
     int last_found_index = 0;
 
     while (last_found_index < path.size() - 1) {
