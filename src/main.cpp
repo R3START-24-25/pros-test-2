@@ -138,41 +138,43 @@ void track_robot() {
 
 bool reversing = false;
 bool blue = true;
-void colour_sensor_thread() {
-    while (true) {
-        if ( optical_sensor.get_proximity() > 200 && (blue && optical_sensor.get_rgb().red > 230) || (!blue && optical_sensor.get_rgb().blue > 230) ) {
-            std::cout << "red " << optical_sensor.get_rgb().red << std::endl;
-            std::cout << "prox " << optical_sensor.get_proximity() << std::endl;
-            reversing = true;
-            intake_motor.move(127);
-            pros::delay(1000);
-        } else reversing = false;
-
-        pros::delay(5);
-    }
-}
+//void colour_sensor_thread() {
+    //while (true) {
+        //if ( optical_sensor.get_proximity() > 200 && (blue && optical_sensor.get_rgb().red > 230) || (!blue && optical_sensor.get_rgb().blue > 230) ) {
+            //std::cout << "red " << optical_sensor.get_rgb().red << std::endl;
+            //std::cout << "prox " << optical_sensor.get_proximity() << std::endl;
+            //reversing = true;
+            //intake_motor.move(127);
+            //pros::delay(1000);
+        //} else reversing = false;
+//
+        //pros::delay(5);
+    //}
+//}
 
 bool blue_in_check = false;
 
-void lil_reverse() {
-    while (true) {
-        if (distance_sensor.get_distance() < 15 && !blue_in_check) {
-            pros::delay(650);
-            intake_motor.move(127);
-            pros::delay(250);
-            intake_motor.move(-127);
-        }
-
-        if (blue_in_check) {
-            while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
-            pros::delay(1000);
-            intake_motor.move(0);
-            blue_in_check = false;
-            pros::delay(4000);
-        }
-        pros::delay(20);
-    }
-}
+//void lil_reverse() {
+    //while (true) {
+        //if (distance_sensor.get_distance() < 15 && !blue_in_check) {
+            //pros::delay(650);
+            //intake_motor.move(127);
+            //pros::delay(250);
+            //intake_motor.move(-127);
+        //}
+//
+        //if (blue_in_check) {
+            ////while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
+            ////pros::delay(1000);
+            //while (!(distance_sensor.get_distance() < 15)) pros::delay(10);
+            //pros::delay(1000);
+            //intake_motor.move(0);
+            //blue_in_check = false;
+            //pros::delay(4000);
+        //}
+        //pros::delay(20);
+    //}
+//}
 
 void initialize() {
     left_encoder.reset_position();
@@ -184,7 +186,7 @@ void initialize() {
     inertial_sensor.set_data_rate(5);
 
     pros::Task odom_task(track_robot);
-    pros::Task lil_reverse_task(lil_reverse);
+    //pros::Task lil_reverse_task(lil_reverse);
 
     //optical_sensor.set_led_pwm(10);
     //pros::Task optical_task(colour_sensor_thread);
@@ -196,14 +198,7 @@ void disabled() {}
 void competition_initialize() {}
 
 bool skills = true;
-void autonomous() {
-    PID xy_pid(1, 0, 0.25, 12, 5);
-    PID turn_pid(0.6, 0, 0, 12, 5);
-
-    left_drive_motors.set_brake_mode(pros::MotorBrake::hold);
-    right_drive_motors.set_brake_mode(pros::MotorBrake::hold);
-    while (inertial_sensor.is_calibrating()) pros::delay(5);
-}
+void autonomous();
 
 void opcontrol() {
     left_drive_motors.set_brake_mode(pros::MotorBrake::coast);
@@ -211,7 +206,6 @@ void opcontrol() {
 
     Drive drive;
     bool mogo_state = false;
-    int count = 0;
 
     int lift_target_pos = 0;
     bool move_lift_down = false;
@@ -226,17 +220,14 @@ void opcontrol() {
             mogo_piston.set_value(mogo_state);
         }
 
-        if (controller.get_digital(DIGITAL_L1)) intake_motor.move(127);
-        else if (controller.get_digital(DIGITAL_L2) && !reversing) intake_motor.move(-127);
+        if (controller.get_digital(DIGITAL_L1))
+            intake_motor.move(127);
+        else if (controller.get_digital(DIGITAL_L2)
+                && !reversing) intake_motor.move(-127);
         else if (!reversing) intake_motor.move(0);
 
-        if (controller.get_digital_new_press(DIGITAL_R2)) {
-            claw_lifted = !claw_lifted;
-            claw_lift_piston.set_value(claw_lifted);
-        }
-
-        if (count % 500 == 0) std::cout << position.x << " " << position.y << " " << position.theta << "\n";
-        count++;
+        if (controller.get_digital(DIGITAL_RIGHT)) doinker_piston.set_value(true);
+        else doinker_piston.set_value(false);
 
         pros::delay(5);
     }
