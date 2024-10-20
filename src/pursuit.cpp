@@ -114,7 +114,17 @@ void move_to_point_step(Position pos, Point target, double kP, double linear_v) 
 }
 
 void pure_pursuit() {
-    std::vector<Point> path = {};
+    std::vector<Point> path = {
+        Point(0, 0),
+        Point(-0.81, 7.564),
+        Point(1.351, 12.427),
+        Point(2.431, 18.64),
+        Point(5.4, 22.4),
+        Point(10.3, 27.0),
+        Point(11.1, 32.9),
+        Point(14.0, 35.9),
+        Point(18.4, 35.1),
+    };
     Position position;
     int last_found_index = 0;
 
