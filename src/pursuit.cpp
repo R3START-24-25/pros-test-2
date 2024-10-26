@@ -2,14 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-
-class Point {
-    public: double x, y;
-            Point(double X, double Y) {
-                x = X; y = Y;
-            }
-            Point();
-};
+#include <ostream>
 
 class Intersects {
     public: double x1, y1, x2, y2;
@@ -69,7 +62,7 @@ Intersects line_circle_intersect(Position pos, Point point_one, Point point_two,
 Point find_target(Position pos, std::vector<Point> path, int *last_found_index, double look_ahead) {
     if (*last_found_index == path.size() - 1) return path.back();
 
-    Point target;
+    Point target(0,0);
     Intersects intersects = line_circle_intersect(pos, path[*last_found_index], path[*last_found_index+1], look_ahead);
     
     if (!(intersects.xy1 || intersects.xy2)) {
@@ -96,7 +89,8 @@ Point find_target(Position pos, std::vector<Point> path, int *last_found_index, 
 
     if (target_to_path > bot_to_path) {
         (*last_found_index)++;
-        return find_target(pos, path, last_found_index, look_ahead);
+        //return find_target(pos, path, last_found_index, look_ahead);
+        return path[*last_found_index];
     }
 
     return target;
@@ -109,26 +103,32 @@ void move_to_point_step(Position pos, Point target, double kP, double linear_v) 
     double turn_error = abs_turn_to - pos.theta;
     if (fabs(turn_error) > 180) turn_error = (turn_error < 0 ? 1 : -1) * (360 - fabs(turn_error));
 
-    left_drive_motors.move(linear_v - turn_error * kP);
+    left_drive_motors.move(-linear_v + turn_error * kP);
     right_drive_motors.move(linear_v + turn_error * kP);
+
+    // fix the above??
 }
 
 void pure_pursuit() {
     int last_found_index = 0;
 
-    position.x = 57;
-    position.y = 35;
+    position.x = 47.244;
+    position.y = 58.655;
 
     std::vector<Point> path = {
-        Point(48.659, 35.087),
-        Point(42.716, 34.817),
-        Point(38.934, 33.466),
-        Point(32.991, 32.386),
-        Point(25.967, 29.684),
+        Point(47.244, 43.797),
+        Point(47.244, 24.076),
     };
 
     while (last_found_index < path.size() - 1) {
         Point target = find_target(position, path, &last_found_index, 10);
-        move_to_point_step(position, target, 0.4, 35);
+        move_to_point_step(position, target, 0.6, 45);
+
+        //std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
+
+        pros::delay(5);
     }
+    left_drive_motors.move(0);
+    right_drive_motors.move(0);
 }
+

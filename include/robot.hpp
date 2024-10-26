@@ -30,7 +30,18 @@ class Position {
             float theta = 0;
 };
 
+class Point {
+    public: double x, y;
+            Point(double X, double Y) {
+                x = X; y = Y;
+            }
+            Point();
+};
+
 extern Position position;
+
+extern void pure_pursuit();
+//extern void move_to_point_straight(Point target, double kP_linear, double kP_turn);
 
 #define ROBOT_HPP
 #endif
