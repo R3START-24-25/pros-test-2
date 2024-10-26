@@ -2,8 +2,8 @@
 #include <cmath>
 
 void track_robot() {
-    const float left_offset = 0;
-    const float back_offset = -0.250;
+    const float left_offset = -0.591;
+    const float back_offset = 0;
     const float wheel_diameter = 2; // inches
     const float temp_wheel_diameter = 2.0625; // inches
 
