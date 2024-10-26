@@ -41,7 +41,7 @@ class Point {
 extern Position position;
 
 extern void pure_pursuit();
-//extern void move_to_point_straight(Point target, double kP_linear, double kP_turn);
+extern void track_robot();
 
 #define ROBOT_HPP
 #endif

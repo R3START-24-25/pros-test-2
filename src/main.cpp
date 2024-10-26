@@ -94,6 +94,36 @@ double move_pid(PID pid, Point target, char axis) {
     return p_i_d;
 }
 
+double move_pid_one_dir(PID pid, double target, char axis) {
+    if (pid.start) {
+        pid.last_delta_position = 0;
+        pid.oscillated = 0;
+        pid.integral = 0;
+        pid.start = false;
+    }
+
+    double current_position = axis == 'y' ? position.y : position.x;
+    double delta_position = target - current_position;
+
+    bool localsign = delta_position > 0 ? true : false;
+    if (!pid.start && pid.sign != localsign) pid.oscillated++;
+    pid.sign = localsign;
+
+    pid.integral = fabs(delta_position) > 2.5 && delta_position < pid.integral_threshold
+        ? pid.integral + delta_position
+        : 0;
+    
+    float derivative = delta_position - pid.last_delta_position;
+    pid.last_delta_position = delta_position;
+    if (pid.start) {
+        derivative = 0;
+        pid.start = false;
+    }
+
+    float p_i_d = (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+    return p_i_d;
+}
+
 double turn_pid(PID pid, double target) {
     if (pid.start) {
         pid.last_delta_position = 0;
@@ -127,70 +157,6 @@ double turn_pid(PID pid, double target) {
     return p_i_d;
 }
 
-void track_robot() {
-    const float left_offset = 2.000;
-    const float back_offset = 2.000;
-    const float wheel_diameter = 2; // inches
-
-    float last_imu_reading = 0;
-    float last_left_reading = 0;
-    float last_back_reading = 0;
-
-    position.x = 0;
-    position.y = 0;
-    position.theta = 0;
-
-    while (inertial_sensor.is_calibrating()) {
-        pros::c::delay(10);
-    }
-
-	while (true) {
-        float imu_reading = inertial_sensor.get_heading();
-        float left_reading = left_encoder.get_position() / 100.0; // convert to degrees
-        float back_reading = back_encoder.get_position() / 100.0;
-        if (imu_reading > 360) imu_reading = 0;
-
-        float delta_theta = imu_reading - last_imu_reading;
-        if (delta_theta > 180) delta_theta -= 360; // assume wraparoud
-        else if (delta_theta < -180) delta_theta += 360;
-        float delta_left_reading = left_reading - last_left_reading;
-        float delta_back_reading = back_reading - last_back_reading;
-
-        float delta_dist_left = M_PI*wheel_diameter * (delta_left_reading/360);
-        float delta_dist_back = M_PI*wheel_diameter * (delta_back_reading/360);
-
-        position.theta = imu_reading;
-
-        float delta_local_offset[2];
-        if (fabs(delta_theta) < 0.0001) {
-            delta_local_offset[0] = delta_dist_back;
-            delta_local_offset[1] = delta_dist_left;
-        }
-        else {
-            const float constant = 2*sinf((delta_theta * M_PI) / 360);
-            delta_local_offset[0] = constant * ( ( delta_dist_back / ((delta_theta * M_PI)/180) ) + back_offset );
-            delta_local_offset[1] = constant * ( ( delta_dist_left / ((delta_theta * M_PI)/180) ) - left_offset );
-        }
-
-        float avg_theta = last_imu_reading + (delta_theta / 2);
-        if (avg_theta > 360) avg_theta -= 360; // wraparound
-        float avg_theta_rad = avg_theta * (M_PI / 180.0);
-
-        float delta_global_offset[2] = { // cartesian
-            delta_local_offset[0] * cosf(-1*avg_theta_rad) - delta_local_offset[1] * sinf(-1*avg_theta_rad),
-            delta_local_offset[0] * sinf(-1*avg_theta_rad) + delta_local_offset[1] * cosf(-1*avg_theta_rad)
-        };
-
-        position.x += delta_global_offset[0];
-        position.y += delta_global_offset[1];
-
-        last_imu_reading = imu_reading;
-        last_left_reading = left_reading;
-        last_back_reading = back_reading;
-
-        pros::delay(5);
-    }
-}
 
 bool reversing = false;
 
@@ -199,9 +165,12 @@ void initialize() {
     left_encoder.set_data_rate(5);
     back_encoder.reset_position();
     back_encoder.set_data_rate(5);
-    inertial_sensor.reset();
+    //inertial_sensor.reset();
     inertial_sensor.set_heading(0);
     inertial_sensor.set_data_rate(5);
+
+    left_drive_motors.tare_position_all();
+    right_drive_motors.tare_position_all();
 
     pros::Task odom_task(track_robot);
 }
@@ -231,7 +200,27 @@ void turn_to_face(double heading, PID pid) {
     left_drive_motors.move(0); right_drive_motors.move(0);
 }
 
-void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, double heading = position.theta) {
+void move_one_dir(double pos, PID pid, char axis, int dir = 1) {
+    double linear_pid_out = 127;
+    pid.start = true;
+
+    while (fabs(linear_pid_out) > 0.75) {
+        linear_pid_out = move_pid_one_dir(pid, pos, axis);
+        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
+
+        linear_pid_out = fabs(linear_pid_out) < 5 && fabs(linear_pid_out) > 0.75 ? (linear_pid_out > 0 ? 5 : -5) : linear_pid_out;
+        linear_pid_out = fabs(linear_pid_out) > 60 ? (linear_pid_out > 0 ? 60 : -60) : linear_pid_out;
+
+        left_drive_motors.move_velocity(linear_pid_out * dir);
+        right_drive_motors.move_velocity(-linear_pid_out * dir);
+
+        pros::delay(5);
+    }
+
+    left_drive_motors.move(0); right_drive_motors.move(0);
+}
+
+void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, int mult = 1, double heading = position.theta) {
     double abs_turn_to = atan2f(target.x - position.x, target.y - position.y) * (180/M_PI);
     if (abs_turn_to < 0) abs_turn_to += 360;
 
@@ -241,6 +230,7 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, d
     turnpid.start = true;
     movepid.start = true;
     while (fabs(turn_pid_out) > 0.6 || fabs(linear_pid_out) > 0.25) {
+        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
         double dx = target.x - position.x;
         double dy = target.y - position.y;
         if (fabs(dx) + fabs(dy) > 3) {
@@ -261,8 +251,8 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, d
         linear_pid_out = fabs(linear_pid_out) < 10 && fabs(linear_pid_out) > 0.25 ? (linear_pid_out > 0 ? 10 : -10) : linear_pid_out;
         linear_pid_out = fabs(linear_pid_out) > 60 ? (linear_pid_out > 0 ? 60 : -60) : linear_pid_out;
 
-        left_drive_motors.move_velocity(turn_pid_out + linear_pid_out);
-        right_drive_motors.move_velocity(turn_pid_out -linear_pid_out);
+        left_drive_motors.move_velocity(turn_pid_out + linear_pid_out*mult);
+        right_drive_motors.move_velocity(turn_pid_out -linear_pid_out*mult);
 
         pros::delay(5);
     }
@@ -272,13 +262,21 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, d
 
 // INCREASE THREASHOLDS, MERGE CODE, CRY!
 
-PID movepid = PID(1.25, 4.5, 0.05, 50, 5);
+PID movepid = PID(1.25, 4.5, 0.15, 50, 5);
 PID turnpid = PID(0.75, 0.1, 0.05, 45, 5);
 
 void autonomous() {
-    //pure_pursuit();
-    for (int i = 1; i < 20; i++)
-        turn_to_face(70*i, turnpid);
+    left_drive_motors.tare_position_all();
+    right_drive_motors.tare_position_all();
+
+    intake_motor.move_velocity(200);
+    pros::delay(1500);
+    move_one_dir(-11, movepid, 'y');
+    pros::delay(1000);
+    turn_to_face(270, turnpid);
+    pros::delay(500);
+    move_to_point_straight(Point(-13, -13), movepid, turnpid, 'x', -1, 270);
+    mogo_piston.set_value(true);
 }
 
 void opcontrol() {
