@@ -21,6 +21,9 @@ extern pros::Rotation back_encoder;
 
 extern pros::Motor intake_motor;
 
+extern pros::MotorGroup lb_motors;
+extern pros::Rotation lb_rotation_sensor;
+
 //extern pros::Optical optical_sensor;
 //extern pros::Distance distance_sensor;
 

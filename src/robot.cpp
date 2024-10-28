@@ -18,4 +18,7 @@ pros::Rotation back_encoder(14);
 
 pros::Motor intake_motor(4);
 
+pros::MotorGroup lb_motors({-6, 16});
+pros::Rotation lb_rotation_sensor(17);
+
 Position position;
