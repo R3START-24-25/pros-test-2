@@ -330,10 +330,10 @@ void autonomous() {
     pros::delay(100);
     turn_to_face(360, turnpid);
     move_one_dir(60, movepid, 'y', 1);
-    turn_to_face(125, turnpid);
+    turn_to_face(122, turnpid);
     //move_to_point_straight(Point(37,38.5), movepid, turnpid, 'y', false, true);
     move_one_dir(38.5, movepid, 'y', -0.8);
-    mogo_piston.set_value(false);
+    mogo_piston.set_value(true);
 }
 
 const double lb_rest_pos = 360;
