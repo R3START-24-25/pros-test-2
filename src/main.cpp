@@ -345,94 +345,45 @@ void autonomous() {
         mogo_piston.set_value(false);
         // mogo in corner
         move_one_dir(-13, movepid, 'y', 1.6);
-        turn_to_face(0, turnpid, 1.4);
+        turn_to_face(270, turnpid, 1.4);
 
-        const double lb_rest_pos = 360;
-        const double lb_pickup_pos = 335;
-        const double lb_score_pos = 232;
-        const double lb_tolerance = 5;
-
-        while (true) {
-            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
-            while (lb_pos < 180) lb_pos += 360;
-
-            if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
-                lb_motors.move_velocity(0);
-                break;
-            }
-            else lb_motors.move(-1 * arm_pid(armpid, lb_pos, lb_pickup_pos));
-
-            pros::delay(5);
-        }
-        
-        //move_one_dir(-62, movepid, 'y', 1.3);
-        move_to_point_straight(Point(-57,-61.5), movepid, turnpid, 'y', true, false, 1, 86, 3000);
-        pros::delay(500);
         intake_motor.move(0);
 
-        // below = pressing up against alliance stake
-        left_drive_motors.move(-30); right_drive_motors.move(30);
-        pros::delay(150);
-        while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-
-        int time = 0;
-        while (true) {
-            if (time >= 1500) break;
-
-            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
-            while (lb_pos < 180) lb_pos += 360;
-
-            if (within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
-                lb_motors.move(0);
-                break;
-            }
-            else lb_motors.move(-1 * arm_pid(armpid, lb_pos, lb_score_pos));
-
-            pros::delay(5); time += 5;
-        }
-
-        pros::delay(150);
-        move_one_dir(-56, movepid, 'x', 8.0);
-        pros::delay(150);
-        // below = pressing up against alliance stake
-        left_drive_motors.move(-30); right_drive_motors.move(30);
-        pros::delay(150);
-        while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-
-        pros::delay(150);
-        move_one_dir(-57, movepid, 'x', 6.0);
-
-        time = 0;
-        while (true) {
-            if (time >= 1500) break;
-
-            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
-            while (lb_pos < 180) lb_pos += 360;
-
-            if (within_tolerance(lb_pos, lb_rest_pos, lb_tolerance)) {
-                lb_motors.move_velocity(0);
-                break;
-            }
-            else lb_motors.move(1 * arm_pid(armpid, lb_pos, lb_rest_pos));
-
-            pros::delay(5); time += 5;
-        }
-
-        // lb done
-
-        turn_to_face(326, turnpid);
+        move_to_point_straight(Point(6,-16.5), movepid, turnpid, 'x', true, false, 1, 90, 2500);
+        move_one_dir(23, movepid, 'x');
+        // picked up mogo ^
+        turn_to_face(5, turnpid);
         intake_motor.move_velocity(200);
-        move_one_dir(-80, movepid, 'y');
-        /*
-        turn_to_face(135, turnpid);
-        intake_motor.move(0);
-        move_one_dir(-124, movepid, 'y', -1);
-        turn_to_face(265, turnpid);
-        move_one_dir(-59, movepid, 'x', -1);
-        move_one_dir(-40, movepid, 'x');
-        */
+        move_one_dir(-41, movepid, 'y');
+        // ring 1 ^
+        turn_to_face(275, turnpid);
+        move_one_dir(48, movepid, 'x', -1);
+        // ring 2 ^
+        turn_to_face(184, turnpid); // 180 //
+        move_one_dir(-16, movepid, 'y', -1);
+        move_one_dir(-4, movepid, 'y', -0.7);
+        move_one_dir(-6, movepid, 'y', -1.3);
+        // rings 3/4 ^
+        turn_to_face(300, turnpid);
+        move_one_dir(-18, movepid, 'y', 1.1);
+        // ring 5 ^
+        turn_to_face(30, turnpid);
+        move_one_dir(-6, movepid, 'y', 1.1, 1000);
+        mogo_piston.set_value(false);
+        // mogo in corner
+        move_one_dir(-13, movepid, 'y', 1.6);
+
+        // go to blue mogo
+        move_to_point_straight(Point(35,-108), movepid, turnpid, 'y', true, false, 1, 206);
+        move_one_dir(-132, turnpid, 'y', -2.5);
+        mogo_piston.set_value(true);
+        move_one_dir(-125, turnpid, 'y', -2.5);
+        turn_to_face(140, turnpid);
+        move_one_dir(80, movepid, 'x', 1.4, 2000);
+        pros::delay(500);
+        mogo_piston.set_value(false);
+        move_one_dir(60, movepid, 'x', -0.6);
+        // mogo in corner ^
 
     }
 
@@ -465,7 +416,7 @@ void autonomous() {
         mogo_piston.set_value(false);
         turn_to_face(320, turnpid, 2.3);
         move_one_dir(-32, movepid, 'x', -1.5);
-        move_to_point_straight(Point(-18,32), movepid, turnpid, 'x', false, false, 4.8);
+        move_to_point_straight(Point(-18,32), movepid, turnpid, 'x', false, false, 4.8, 1500);
     }
 
     autoclamp.remove();
