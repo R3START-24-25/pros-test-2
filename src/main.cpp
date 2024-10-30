@@ -209,7 +209,7 @@ void disabled() {}
 // after init when in comp
 void competition_initialize() {}
 
-void turn_to_face(double heading, PID pid) {
+void turn_to_face(double heading, PID pid, double mult = 1) {
     double turn_pid_out = 127;
     pid.start = true;
 
@@ -217,11 +217,11 @@ void turn_to_face(double heading, PID pid) {
         turn_pid_out = turn_pid(pid, heading);
         if (fabs(turn_pid_out) <= 0.6) break;
 
-        turn_pid_out = fabs(turn_pid_out) < 14 ? (turn_pid_out > 0 ? 14 : -14) : turn_pid_out;
+        turn_pid_out = fabs(turn_pid_out) < 18 ? (turn_pid_out > 0 ? 18 : -18) : turn_pid_out;
         turn_pid_out = fabs(turn_pid_out) > 60 ? (turn_pid_out > 0 ? 60 : -60) : turn_pid_out;
 
-        left_drive_motors.move(turn_pid_out);
-        right_drive_motors.move(turn_pid_out);
+        left_drive_motors.move(turn_pid_out*mult);
+        right_drive_motors.move(turn_pid_out*mult);
 
         pros::delay(5);
     }
@@ -229,30 +229,31 @@ void turn_to_face(double heading, PID pid) {
     left_drive_motors.move(0); right_drive_motors.move(0);
 }
 
-void move_one_dir(double pos, PID pid, char axis, double dir = 1) {
+void move_one_dir(double pos, PID pid, char axis, double dir = 1, int timeout = 2000) {
+    int time = 0;
     double linear_pid_out = 127;
     pid.start = true;
 
-    while (fabs(linear_pid_out) > 0.75) {
+    while (fabs(linear_pid_out) > 1.5) {
         linear_pid_out = move_pid_one_dir(pid, pos, axis);
-        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
 
         linear_pid_out = fabs(linear_pid_out) < 12 && fabs(linear_pid_out) > 0.75 ? (linear_pid_out > 0 ? 12 : -12) : linear_pid_out;
         linear_pid_out = fabs(linear_pid_out) > 60 ? (linear_pid_out > 0 ? 60 : -60) : linear_pid_out;
-
-        //left_drive_motors.move_velocity(linear_pid_out * dir);
-        //right_drive_motors.move_velocity(-linear_pid_out * dir);
 
         left_drive_motors.move(linear_pid_out * dir);
         right_drive_motors.move(-linear_pid_out * dir);
 
         pros::delay(5);
+        time += 5;
+
+        if (time >= timeout) break;
     }
 
     left_drive_motors.move(0); right_drive_motors.move(0);
 }
 
-void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, bool turn, bool xrev = false, int mult = 1, double heading = position.theta) {
+void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, bool turn, bool xrev = false, double mult = 1, double heading = position.theta, int timeout = 3000) {
+    int time = 0;
     double abs_turn_to = atan2f(target.x - position.x, target.y - position.y) * (180/M_PI);
     if (abs_turn_to < 0) abs_turn_to += 360;
 
@@ -262,13 +263,14 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
     turnpid.start = true;
     movepid.start = true;
     while (fabs(turn_pid_out) > 0.6 || fabs(linear_pid_out) > 0.25) {
-        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
         double dx = target.x - position.x; //30
         double dy = target.y - position.y; //-5
         if (fabs(dx) + fabs(dy) > 3) {
             abs_turn_to = atan2f(dx, dy) * (180/M_PI); //100
             if (abs_turn_to < 0) abs_turn_to += 360;
-            if (xrev) abs_turn_to = fmod(abs_turn_to + 180, 360);
+            //if (xrev) abs_turn_to = fmod(abs_turn_to + 180, 360);
+            abs_turn_to = fmod(abs_turn_to + 180, 360);
+            std::cout << "abs_turn_to: " << abs_turn_to << std::endl;
         }
 
         turn_pid_out = turn_pid(turnpid, abs_turn_to); //100
@@ -285,13 +287,16 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
         if (xrev) linear_pid_out *= 1;
         if (xrev) turn_pid_out = 0;
         
-        left_drive_motors.move_velocity(turn_pid_out + linear_pid_out);
-        right_drive_motors.move_velocity(turn_pid_out - linear_pid_out);
+        left_drive_motors.move((turn_pid_out + linear_pid_out)*mult);
+        right_drive_motors.move((turn_pid_out - linear_pid_out)*mult);
 
         pros::delay(5);
+        time += 5;
+
+        if (time >= timeout) break;
     }
 
-    if (turn) turn_to_face(0, turnpid);
+    if (turn) turn_to_face(heading, turnpid);
 }
 
 // INCREASE THREASHOLDS, MERGE CODE, CRY!
@@ -300,52 +305,170 @@ PID movepid = PID(1.4, 4.5, 0.25, 50, 5);
 PID turnpid = PID(0.8, 0.1, 0.05, 45, 5);
 PID armpid  = PID(1.50, 0.2, 0.15, 50, 5);
 
-void autonomous() {
-    /*
-    left_drive_motors.tare_position_all();
-    right_drive_motors.tare_position_all();
-
-    intake_motor.move_velocity(200);
-    pros::delay(1500);
-    move_one_dir(-11, movepid, 'y');
-    pros::delay(1000);
-    turn_to_face(270, turnpid);
-    pros::delay(500);
-    move_to_point_straight(Point(-13, -13), movepid, turnpid, 'x', -1, 270);
-    mogo_piston.set_value(true);
-    */
-    
-    move_one_dir(14.75, movepid, 'y', 1);
-    turn_to_face(270, turnpid);
-    left_drive_motors.move(30); right_drive_motors.move(-30);
-    pros::delay(250);
-    while (left_encoder.get_velocity() > 200) {
-        pros::delay(5);
+void autoclamp_auton() {
+    while (true) {
+        if (mogo_distance.get_distance() < 30) mogo_piston.set_value(true);
     }
-    left_drive_motors.move(0); right_drive_motors.move(0);
-    intake_motor.move(127);
-    pros::delay(1000);
-    intake_motor.move(0);
-    move_one_dir(2, movepid, 'x', -1);
-    pros::delay(100);
-    turn_to_face(360, turnpid);
-    move_one_dir(60, movepid, 'y', 1);
-    turn_to_face(122, turnpid);
-    //move_to_point_straight(Point(37,38.5), movepid, turnpid, 'y', false, true);
-    move_one_dir(38.5, movepid, 'y', -0.8);
-    mogo_piston.set_value(true);
 }
-
-const double lb_rest_pos = 360;
-const double lb_pickup_pos = 335;
-const double lb_score_pos = 232;
-const double lb_tolerance = 5;
-int lb_state = 0; // 0 = still, 1 = move to rest, 2 = move to pickup, 3 = move to score
-int lb_dir = 1;
 
 bool within_tolerance(double current, double target, double tolerance) {
     if (current - tolerance < target && current + tolerance > target) return true;
     return false;
+}
+
+const int route_num = 0;
+
+void autonomous() {
+    pros::Task autoclamp(autoclamp_auton);
+
+    if (route_num == 0) { // skills
+        intake_motor.move_velocity(200);
+        pros::delay(850);
+        intake_motor.move(0);
+        move_one_dir(-13, movepid, 'y');
+        turn_to_face(270, turnpid);
+        move_one_dir(-19, movepid, 'x', -1);
+        //mogo_piston.set_value(true);
+        turn_to_face(0, turnpid);
+        intake_motor.move_velocity(200);
+        move_one_dir(-37, movepid, 'y');
+        turn_to_face(84, turnpid);
+        move_one_dir(-48, movepid, 'x');
+        turn_to_face(174, turnpid); // 180
+        move_one_dir(-16, movepid, 'y', -1);
+        move_one_dir(-3, movepid, 'y', -0.7);
+        move_one_dir(-6, movepid, 'y', -1.3);
+        turn_to_face(60, turnpid);
+        move_one_dir(-15, movepid, 'y', 1.1);
+        turn_to_face(340, turnpid);
+        move_one_dir(-7, movepid, 'y', 1.1, 1000);
+        mogo_piston.set_value(false);
+        // mogo in corner
+        move_one_dir(-13, movepid, 'y', 1.6);
+        turn_to_face(0, turnpid, 1.4);
+
+        const double lb_rest_pos = 360;
+        const double lb_pickup_pos = 335;
+        const double lb_score_pos = 232;
+        const double lb_tolerance = 5;
+
+        while (true) {
+            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+            while (lb_pos < 180) lb_pos += 360;
+
+            if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
+                lb_motors.move_velocity(0);
+                break;
+            }
+            else lb_motors.move(-1 * arm_pid(armpid, lb_pos, lb_pickup_pos));
+
+            pros::delay(5);
+        }
+        
+        //move_one_dir(-62, movepid, 'y', 1.3);
+        move_to_point_straight(Point(-57,-61.5), movepid, turnpid, 'y', true, false, 1, 86, 3000);
+        pros::delay(500);
+        intake_motor.move(0);
+
+        // below = pressing up against alliance stake
+        left_drive_motors.move(-30); right_drive_motors.move(30);
+        pros::delay(150);
+        while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+
+        int time = 0;
+        while (true) {
+            if (time >= 1500) break;
+
+            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+            while (lb_pos < 180) lb_pos += 360;
+
+            if (within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
+                lb_motors.move(0);
+                break;
+            }
+            else lb_motors.move(-1 * arm_pid(armpid, lb_pos, lb_score_pos));
+
+            pros::delay(5); time += 5;
+        }
+
+        pros::delay(150);
+        move_one_dir(-56, movepid, 'x', 8.0);
+        pros::delay(150);
+        // below = pressing up against alliance stake
+        left_drive_motors.move(-30); right_drive_motors.move(30);
+        pros::delay(150);
+        while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+
+        pros::delay(150);
+        move_one_dir(-57, movepid, 'x', 6.0);
+
+        time = 0;
+        while (true) {
+            if (time >= 1500) break;
+
+            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+            while (lb_pos < 180) lb_pos += 360;
+
+            if (within_tolerance(lb_pos, lb_rest_pos, lb_tolerance)) {
+                lb_motors.move_velocity(0);
+                break;
+            }
+            else lb_motors.move(1 * arm_pid(armpid, lb_pos, lb_rest_pos));
+
+            pros::delay(5); time += 5;
+        }
+
+        // lb done
+
+        turn_to_face(326, turnpid);
+        intake_motor.move_velocity(200);
+        move_one_dir(-80, movepid, 'y');
+        /*
+        turn_to_face(135, turnpid);
+        intake_motor.move(0);
+        move_one_dir(-124, movepid, 'y', -1);
+        turn_to_face(265, turnpid);
+        move_one_dir(-59, movepid, 'x', -1);
+        move_one_dir(-40, movepid, 'x');
+        */
+
+    }
+
+    else if (route_num == 1) {
+        move_one_dir(15.6, movepid, 'y', 1);
+        turn_to_face(90, turnpid);
+
+        left_drive_motors.move(30); right_drive_motors.move(-30);
+        pros::delay(150);
+        while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+
+        intake_motor.move(127);
+        pros::delay(900);
+        intake_motor.move(0);
+        move_one_dir(-2, movepid, 'x', 1);
+        turn_to_face(223, turnpid);
+        move_one_dir(-31, movepid, 'x', -1.5, 1750);
+        //mogo_piston.set_value(true);
+        pros::delay(100);
+
+        turn_to_face(35, turnpid);
+        intake_motor.move(127);
+        move_one_dir(-47, movepid, 'x', 1.3, 1000);
+        move_one_dir(-44, movepid, 'x', 1.3, 1000);
+        turn_to_face(22, turnpid, 1.8);
+        move_one_dir(-47.5, movepid, 'x', 1.5, 1000);
+
+        move_one_dir(-42, movepid, 'x', 1.7, 1000);
+        mogo_piston.set_value(false);
+        turn_to_face(320, turnpid, 2.3);
+        move_one_dir(-32, movepid, 'x', -1.5);
+        move_to_point_straight(Point(-18,32), movepid, turnpid, 'x', false, false, 4.8);
+    }
+
+    autoclamp.remove();
 }
 
 void opcontrol() {
@@ -362,14 +485,34 @@ void opcontrol() {
     bool claw_lifted = false;
 
     int count = 0;
+    int last_unclamp = 0;
+    int last_autoclamp = -100;
+    bool can_autoclamp = true;
+
+    const double lb_rest_pos = 360;
+    const double lb_pickup_pos = 335;
+    const double lb_score_pos = 232;
+    const double lb_tolerance = 5;
+    int lb_state = 0; // 0 = still, 1 = move to rest, 2 = move to pickup, 3 = move to score
+    int lb_dir = 1;
 
     while (true) {
         drive.movement();
 
-        if (controller.get_digital_new_press(DIGITAL_R1)) {
+        if (controller.get_digital_new_press(DIGITAL_R1) && count >= last_autoclamp + 100) {
             mogo_state = !mogo_state;
             mogo_piston.set_value(mogo_state);
+            if (!mogo_state) last_unclamp = count;
+            controller.rumble("_");
+            can_autoclamp = false;
         }
+        if (mogo_distance.get_distance() < 30 && can_autoclamp) {
+            mogo_state = true;
+            mogo_piston.set_value(mogo_state);
+            controller.rumble("-");
+            last_autoclamp = count;
+        }
+        if (mogo_distance.get_distance() > 40 && count > last_unclamp + 200) can_autoclamp = true;
 
         if (controller.get_digital(DIGITAL_L1))
             intake_motor.move(127);
@@ -384,14 +527,15 @@ void opcontrol() {
             move_to_point_straight(Point(0,0), movepid, turnpid, true, 'y', 0);
         }
 
-        double lb_pos = lb_rotation_sensor.get_position();
-        lb_pos /= 100;
+        double lb_pos = lb_rotation_sensor.get_position() / 100.0;
         while (lb_pos < 180) lb_pos += 360;
 
         if (controller.get_digital_new_press(DIGITAL_R2)) {
             if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
                 lb_state = 1;
                 lb_dir = 1;
+            } else if (lb_state == 2 && lb_dir == 1) {
+                lb_state = 1;
             } else {
                 lb_state = 2;
                 if (lb_pos < lb_pickup_pos) lb_dir = 1;
@@ -434,10 +578,9 @@ void opcontrol() {
                 break;
         }
 
-        if (count == 500) {
+        if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
             std::cout << "lb pos: " << lb_pos << std::endl;
-            count = 0;
         }
         count++;
 

@@ -24,8 +24,8 @@ extern pros::Motor intake_motor;
 extern pros::MotorGroup lb_motors;
 extern pros::Rotation lb_rotation_sensor;
 
-//extern pros::Optical optical_sensor;
-//extern pros::Distance distance_sensor;
+extern pros::Optical optical_sensor;
+extern pros::Distance mogo_distance;
 
 class Position {
     public: float x = 0;

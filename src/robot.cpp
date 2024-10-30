@@ -1,7 +1,9 @@
 #include "robot.hpp"
 #include "pros/abstract_motor.hpp"
 #include "pros/adi.hpp"
+#include "pros/distance.hpp"
 #include "pros/motor_group.hpp"
+#include "pros/optical.hpp"
 #include "pros/rotation.hpp"
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
@@ -20,5 +22,8 @@ pros::Motor intake_motor(4);
 
 pros::MotorGroup lb_motors({-6, 16});
 pros::Rotation lb_rotation_sensor(17);
+
+pros::Optical optical_sensor(18);
+pros::Distance mogo_distance(7);
 
 Position position;
