@@ -1,4 +1,5 @@
 #include "robot.hpp"
+#include "pros/abstract_motor.hpp"
 #include "pros/adi.hpp"
 #include "pros/distance.hpp"
 #include "pros/motor_group.hpp"
@@ -7,8 +8,8 @@
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
-pros::MotorGroup left_drive_motors({11, 12, 13});
-pros::MotorGroup right_drive_motors({1, 2, 3});
+pros::MotorGroup left_drive_motors({11, 12, 13}, pros::v5::MotorGears::green);
+pros::MotorGroup right_drive_motors({1, 2, 3}, pros::v5::MotorGears::green);
 
 pros::adi::DigitalOut mogo_piston(1);
 pros::adi::DigitalOut doinker_piston(2);
@@ -19,5 +20,10 @@ pros::Rotation back_encoder(14);
 
 pros::Motor intake_motor(4);
 
-//pros::Optical optical_sensor(1);
-//pros::Distance distance_sensor(8);
+pros::MotorGroup lb_motors({-6, 16});
+pros::Rotation lb_rotation_sensor(17);
+
+pros::Optical optical_sensor(18);
+pros::Distance mogo_distance(7);
+
+Position position;

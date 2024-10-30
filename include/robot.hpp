@@ -21,8 +21,30 @@ extern pros::Rotation back_encoder;
 
 extern pros::Motor intake_motor;
 
-//extern pros::Optical optical_sensor;
-//extern pros::Distance distance_sensor;
+extern pros::MotorGroup lb_motors;
+extern pros::Rotation lb_rotation_sensor;
+
+extern pros::Optical optical_sensor;
+extern pros::Distance mogo_distance;
+
+class Position {
+    public: float x = 0;
+            float y = 0;
+            float theta = 0;
+};
+
+class Point {
+    public: double x, y;
+            Point(double X, double Y) {
+                x = X; y = Y;
+            }
+            Point();
+};
+
+extern Position position;
+
+extern void pure_pursuit();
+extern void track_robot();
 
 #define ROBOT_HPP
 #endif
