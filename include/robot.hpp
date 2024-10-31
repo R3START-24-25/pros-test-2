@@ -41,10 +41,35 @@ class Point {
             Point();
 };
 
+class PID {
+    public: float kP;
+            float kI;
+            float kD;
+            float last_delta_position;
+            float integral;
+            float integral_threshold;
+            bool sign;
+            bool start;
+            int oscillated;
+            int dt;
+
+            PID(float kP, float kI, float kD, float integral_threshold, int dt) {
+                this->kP = kP;
+                this->kI = kI;
+                this->kD = kD;
+                this->integral_threshold = integral_threshold;
+                this->dt = dt;
+            }
+};
+
 extern Position position;
 
 extern void pure_pursuit();
 extern void track_robot();
+
+extern void turn_to_face(double heading, PID pid, double mult = 1);
+extern void move_one_dir(double pos, PID pid, char axis, double dir = 1, int timeout = 2000);
+extern void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, bool turn, bool xrev = false, double mult = 1, double heading = position.theta, int timeout = 3000, bool invert = true);
 
 #define ROBOT_HPP
 #endif
