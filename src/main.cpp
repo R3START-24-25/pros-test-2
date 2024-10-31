@@ -94,7 +94,7 @@ void initialize() {
     right_drive_motors.tare_position_all();
 
     pros::Task odom_task(track_robot);
-    pros::Task colour_task(check_colour);
+    //pros::Task colour_task(check_colour);
 
     lb_motors.set_brake_mode(pros::MotorBrake::hold);
 }
@@ -107,7 +107,7 @@ void competition_initialize() {}
 
 // INCREASE THREASHOLDS, MERGE CODE, CRY!
 
-PID armpid  = PID(1.50, 0.2, 0.15, 50, 5);
+PID armpid = PID(1.50, 0.2, 0.15, 50, 5);
 
 bool within_tolerance(double current, double target, double tolerance) {
     if (current - tolerance < target && current + tolerance > target) return true;

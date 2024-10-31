@@ -3,18 +3,92 @@
 #include <cmath>
 #include "robot.hpp"
 
+double Arm_pid(PID pid, double pos, double target) {
+    if (pid.start) {
+        pid.last_delta_position = 0;
+        pid.oscillated = 0;
+        pid.integral = 0;
+        pid.start = false;
+    }
+
+    double delta_position = fabs(target - pos);
+
+    pid.integral = fabs(delta_position) > 2.5 && delta_position < pid.integral_threshold
+        ? pid.integral + delta_position
+        : 0;
+    
+    float derivative = delta_position - pid.last_delta_position;
+    pid.last_delta_position = delta_position;
+    if (pid.start) {
+        derivative = 0;
+        pid.start = false;
+    }
+
+    float p_i_d = (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+    return p_i_d;
+}
+
 PID movepid = PID(1.4, 4.5, 0.25, 50, 5);
 PID turnpid = PID(0.8, 0.1, 0.05, 45, 5);
+PID Armpid = PID(1.50, 0.2, 0.15, 50, 5);
 
 bool can_autoclamp = true;
 
 void autoclamp_auton() {
     while (true) {
         if (mogo_distance.get_distance() < 30 && can_autoclamp) mogo_piston.set_value(true);
+        
+        pros::delay(5);
+    }
+}
+
+bool Within_tolerance(double current, double target, double tolerance) {
+    if (current - tolerance < target && current + tolerance > target) return true;
+    return false;
+}
+
+void lb_down() {
+    const double lb_rest_pos = 360;
+    const double lb_pickup_pos = 335;
+    const double lb_score_pos = 232;
+    const double lb_tolerance = 5;
+
+    while (true) {
+        double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+        while (lb_pos < 180) lb_pos += 360;
+
+        if (Within_tolerance(lb_pos, lb_rest_pos, lb_tolerance)) {
+            lb_motors.move(0);
+            break;
+        } else {
+            lb_motors.move(1 * Arm_pid(Armpid, lb_pos, lb_rest_pos));
+        }
+
+        pros::delay(5);
     }
 }
 
 const int route_num = 1;
+
+void Check_colour() {
+    const bool blue = false;
+    optical_sensor.set_led_pwm(100); // 90 blue 150 red
+
+    while (true) {
+        if (((blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 90))) {
+            pros::delay(300);
+            intake_motor.move(0);
+            pros::delay(350);
+            intake_motor.move(127);
+        }
+        
+        pros::delay(10);
+    }
+
+    std::cout << "blue: " << optical_sensor.get_rgb().blue;
+    std::cout << " green: " << optical_sensor.get_rgb().green;
+    std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
+}
 
 void autonomous() {
     pros::Task autoclamp(autoclamp_auton);
@@ -83,13 +157,42 @@ void autonomous() {
         move_one_dir(60, movepid, 'x', -0.6);
         // mogo in corner ^
 
+        autoclamp.remove();
     }
 
     else if (route_num == 1) {
+        pros::Task check_colour_task(Check_colour);
+        inertial_sensor.set_heading(180);
+        position.theta = 180;
+
+        position.x = 4; position.y = 4.5;
+
+        const double lb_rest_pos = 360;
+        const double lb_pickup_pos = 335;
+        const double lb_score_pos = 232;
+        const double lb_tolerance = 5;
+
         PID temp_movepid = PID(1.4, 4.5, 0.25, 50, 5);
         PID temp_turnpid = PID(0.8, 0.1, 0.05, 45, 5);
 
-        move_one_dir(16.3, temp_movepid, 'y', 0.85);
+        move_one_dir(8, temp_movepid, 'y', -3);
+        turn_to_face(245, temp_turnpid);
+
+        while (true) {
+            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+            while (lb_pos < 180) lb_pos += 360;
+            if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
+                lb_motors.move(0);
+                break;
+            } else {
+                lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_score_pos));
+            }
+
+            pros::delay(5);
+        }
+
+        turn_to_face(242, temp_turnpid); //
+        /*
         turn_to_face(85, temp_turnpid, 1);
 
         left_drive_motors.move(25); right_drive_motors.move(-25);
@@ -98,21 +201,23 @@ void autonomous() {
         left_drive_motors.move(0); right_drive_motors.move(0);
 
         intake_motor.move(127);
-        pros::delay(900);
+        pros::delay(1300); // 900
         intake_motor.move(0);
         move_one_dir(-2, temp_movepid, 'x', 1);
         turn_to_face(219, temp_turnpid);
-        move_one_dir(-34, temp_movepid, 'x', -1.1, 1750);
+        */
+        move_one_dir(-34, temp_movepid, 'x', -0.9, 1750);
         //mogo_piston.set_value(true);
         pros::delay(200);
 
         turn_to_face(34, temp_turnpid);
         intake_motor.move(127);
-        move_one_dir(-47, temp_movepid, 'x', 1, 1000);
+        move_one_dir(-48, temp_movepid, 'x', 1, 1000);
         // ring 1 on mogo ^
         move_one_dir(-42, temp_movepid, 'x', 1.3, 1000);
         turn_to_face(30, temp_turnpid, 1.8);
-        move_one_dir(-48, temp_movepid, 'x', 1.5, 1000);
+        move_one_dir(-48.5, temp_movepid, 'x', 1.5, 1000);
+        // ring 2 on mogo ^
         /*
         turn_to_face(1, turnpid);
         move_one_dir(-38, movepid, 'y', 1.2);
@@ -123,10 +228,12 @@ void autonomous() {
         turn_to_face(320, temp_turnpid, 1.6);
         //can_autoclamp = false;
         //mogo_piston.set_value(false);
-        move_one_dir(-32, temp_movepid, 'x', -1.5);
-        intake_motor.move(0);
-        turn_to_face(180, turnpid);
-        move_one_dir(12, movepid, 'y', -1);
+        move_one_dir(-32, temp_movepid, 'x', -1.3);
+        turn_to_face(160, turnpid);
+        left_drive_motors.move(-50); right_drive_motors.move(50);
+        pros::delay(150);
+        //while (fabs(intake_motor.get_actual_velocity()) > 20) pros::delay(5);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
         /*
         can_autoclamp = true;
         intake_motor.move(0);
@@ -138,7 +245,13 @@ void autonomous() {
         turn_to_face(0, turnpid);
         move_one_dir(0, movepid, 'y');
         */
+        intake_motor.move(0);
+        autoclamp.remove();
+        check_colour_task.remove();
     }
 
-    autoclamp.remove();
+    else if (route_num == 2) {
+        
+    }
+
 }
