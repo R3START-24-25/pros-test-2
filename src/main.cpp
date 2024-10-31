@@ -56,6 +56,30 @@ double arm_pid(PID pid, double pos, double target) {
 }
 
 bool reversing = false;
+bool can_intake = true;
+
+void check_colour() {
+    const bool blue = false;
+    optical_sensor.set_led_pwm(100); // 90 blue 150 red
+
+    while (true) {
+        if (((blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 90)) && controller.get_digital(DIGITAL_L1)) {
+            pros::delay(300);
+            if (controller.get_digital(DIGITAL_L1)) {
+                can_intake = false;
+                intake_motor.move(0);
+                pros::delay(350);
+                can_intake = true;
+            }
+        }
+        
+        pros::delay(10);
+    }
+
+    std::cout << "blue: " << optical_sensor.get_rgb().blue;
+    std::cout << " green: " << optical_sensor.get_rgb().green;
+    std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
+}
 
 void initialize() {
     left_encoder.reset_position();
@@ -70,6 +94,7 @@ void initialize() {
     right_drive_motors.tare_position_all();
 
     pros::Task odom_task(track_robot);
+    pros::Task colour_task(check_colour);
 
     lb_motors.set_brake_mode(pros::MotorBrake::hold);
 }
@@ -88,6 +113,7 @@ bool within_tolerance(double current, double target, double tolerance) {
     if (current - tolerance < target && current + tolerance > target) return true;
     return false;
 }
+
 
 void opcontrol() {
     while (inertial_sensor.is_calibrating()) pros::delay(5);
@@ -132,7 +158,7 @@ void opcontrol() {
         }
         if (mogo_distance.get_distance() > 40 && count > last_unclamp + 200) can_autoclamp = true;
 
-        if (controller.get_digital(DIGITAL_L1))
+        if (controller.get_digital(DIGITAL_L1) && can_intake)
             intake_motor.move(127);
         else if (controller.get_digital(DIGITAL_L2)
                 && !reversing) intake_motor.move(-127);
