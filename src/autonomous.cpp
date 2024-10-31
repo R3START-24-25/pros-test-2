@@ -6,9 +6,11 @@
 PID movepid = PID(1.4, 4.5, 0.25, 50, 5);
 PID turnpid = PID(0.8, 0.1, 0.05, 45, 5);
 
+bool can_autoclamp = true;
+
 void autoclamp_auton() {
     while (true) {
-        if (mogo_distance.get_distance() < 30) mogo_piston.set_value(true);
+        if (mogo_distance.get_distance() < 30 && can_autoclamp) mogo_piston.set_value(true);
     }
 }
 
@@ -84,10 +86,13 @@ void autonomous() {
     }
 
     else if (route_num == 1) {
-        move_one_dir(15.6, movepid, 'y', 1);
-        turn_to_face(88, turnpid);
+        PID temp_movepid = PID(1.4, 4.5, 0.25, 50, 5);
+        PID temp_turnpid = PID(0.8, 0.1, 0.05, 45, 5);
 
-        left_drive_motors.move(30); right_drive_motors.move(-30);
+        move_one_dir(16.5, temp_movepid, 'y', 0.85);
+        turn_to_face(85, temp_turnpid, 1);
+
+        left_drive_motors.move(25); right_drive_motors.move(-25);
         pros::delay(150);
         while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
         left_drive_motors.move(0); right_drive_motors.move(0);
@@ -95,25 +100,41 @@ void autonomous() {
         intake_motor.move(127);
         pros::delay(900);
         intake_motor.move(0);
-        move_one_dir(-2, movepid, 'x', 1);
-        turn_to_face(223, turnpid);
-        move_one_dir(-31, movepid, 'x', -1.5, 1750);
+        move_one_dir(-2, temp_movepid, 'x', 1.1);
+        turn_to_face(219, temp_turnpid);
+        move_one_dir(-34, temp_movepid, 'x', -1.4, 1750);
         //mogo_piston.set_value(true);
-        pros::delay(100);
+        pros::delay(200);
 
-        turn_to_face(33, turnpid);
+        turn_to_face(34, temp_turnpid);
         intake_motor.move(127);
-        move_one_dir(-46.5, movepid, 'x', 1.3, 1000);
-        move_one_dir(-44, movepid, 'x', 1.3, 1000);
-        turn_to_face(22, turnpid, 1.8);
-        move_one_dir(-47.5, movepid, 'x', 1.5, 1000);
+        move_one_dir(-44, temp_movepid, 'x', 1.25, 1000);
+        // ring 1 on mogo ^
+        turn_to_face(1, turnpid);
+        move_one_dir(-36, movepid, 'y', 2.5);
+        pros::delay(200);
+        /*
+        move_one_dir(-42, temp_movepid, 'x', 1.3, 1000);
+        turn_to_face(30, temp_turnpid, 1.8);
+        move_one_dir(-48, temp_movepid, 'x', 1.5, 1000);
+        */
 
-        move_one_dir(-42, movepid, 'x', 1.7, 1000);
+        move_one_dir(-26, temp_movepid, 'y', 1.7, 1000);
+        turn_to_face(320, temp_turnpid, 2.3);
+        can_autoclamp = false;
         mogo_piston.set_value(false);
-        turn_to_face(320, turnpid, 2.3);
-        move_one_dir(-20, movepid, 'x', -2.5);
-        turn_to_face(180, turnpid);
-        move_to_point_straight(Point(-18,32), movepid, turnpid, 'x', false, false, -4.8, 0, 1500, true);
+        move_one_dir(-34, temp_movepid, 'x', -2.5);
+        can_autoclamp = true;
+        intake_motor.move(0);
+        turn_to_face(180, temp_turnpid);
+        move_to_point_straight(Point(-15,28), temp_movepid, temp_turnpid, 'x', true, false, -2.5, 290, 1750, false);
+        move_one_dir(-25, temp_movepid, 'x', -3);
+        mogo_piston.set_value(true);
+        intake_motor.move(127);
+        turn_to_face(0, turnpid);
+        move_one_dir(0, movepid, 'y');
+        /*
+        */
     }
 
     autoclamp.remove();

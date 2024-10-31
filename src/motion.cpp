@@ -169,7 +169,6 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
         if (fabs(dx) + fabs(dy) > 3) {
             abs_turn_to = atan2f(dx, dy) * (180/M_PI); //100
             if (abs_turn_to < 0) abs_turn_to += 360;
-            //if (xrev) abs_turn_to = fmod(abs_turn_to + 180, 360);
             if (invert) abs_turn_to = fmod(abs_turn_to + 180, 360);
             std::cout << "abs_turn_to: " << abs_turn_to << std::endl;
         }
@@ -186,7 +185,6 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
         linear_pid_out = fabs(linear_pid_out) > 60 ? (linear_pid_out > 0 ? 60 : -60) : linear_pid_out;
 
         if (xrev) linear_pid_out *= 1;
-        if (xrev) turn_pid_out = 0;
         
         left_drive_motors.move((turn_pid_out + linear_pid_out)*mult);
         right_drive_motors.move((turn_pid_out - linear_pid_out)*mult);
