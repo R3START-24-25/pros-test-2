@@ -68,10 +68,10 @@ void lb_down() {
     }
 }
 
-const int route_num = 1;
+const int route_num = 2;
 
 void Check_colour() {
-    const bool blue = false;
+    const bool blue = route_num == 2;
     optical_sensor.set_led_pwm(100); // 90 blue 150 red
 
     while (true) {
@@ -88,6 +88,17 @@ void Check_colour() {
     std::cout << "blue: " << optical_sensor.get_rgb().blue;
     std::cout << " green: " << optical_sensor.get_rgb().green;
     std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
+}
+
+void lil_rev() {
+    while (true) {
+        if (fabs(intake_motor.get_actual_velocity()) < 10) {
+            intake_motor.move(-127);
+            pros::delay(250);
+            intake_motor.move(127);
+        }
+        pros::delay(20);
+    }
 }
 
 void autonomous() {
@@ -192,66 +203,91 @@ void autonomous() {
         }
 
         turn_to_face(242, temp_turnpid); //
-        /*
-        turn_to_face(85, temp_turnpid, 1);
-
-        left_drive_motors.move(25); right_drive_motors.move(-25);
-        pros::delay(150);
-        while (abs(left_encoder.get_velocity()) > 200) pros::delay(5);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-
-        intake_motor.move(127);
-        pros::delay(1300); // 900
-        intake_motor.move(0);
-        move_one_dir(-2, temp_movepid, 'x', 1);
-        turn_to_face(219, temp_turnpid);
-        */
         move_one_dir(-34, temp_movepid, 'x', -0.9, 1750);
-        //mogo_piston.set_value(true);
         pros::delay(200);
 
         turn_to_face(34, temp_turnpid);
         intake_motor.move(127);
+        pros::delay(500);
+        pros::Task lil_rev_task(lil_rev);
         move_one_dir(-48, temp_movepid, 'x', 1, 1000);
         // ring 1 on mogo ^
         move_one_dir(-42, temp_movepid, 'x', 1.3, 1000);
         turn_to_face(30, temp_turnpid, 1.8);
         move_one_dir(-48.5, temp_movepid, 'x', 1.5, 1000);
         // ring 2 on mogo ^
-        /*
-        turn_to_face(1, turnpid);
-        move_one_dir(-38, movepid, 'y', 1.2);
-        */
         pros::delay(200);
 
         move_one_dir(-26, temp_movepid, 'y', 1.2, 1000);
         turn_to_face(320, temp_turnpid, 1.6);
-        //can_autoclamp = false;
-        //mogo_piston.set_value(false);
         move_one_dir(-32, temp_movepid, 'x', -1.3);
         turn_to_face(160, turnpid);
         left_drive_motors.move(-50); right_drive_motors.move(50);
         pros::delay(150);
-        //while (fabs(intake_motor.get_actual_velocity()) > 20) pros::delay(5);
-        //left_drive_motors.move(0); right_drive_motors.move(0);
-        /*
-        can_autoclamp = true;
-        intake_motor.move(0);
-        turn_to_face(180, temp_turnpid);
-        move_to_point_straight(Point(-15,28), temp_movepid, temp_turnpid, 'x', true, false, -2.5, 290, 1750, false);
-        move_one_dir(-25, temp_movepid, 'x', -3);
-        mogo_piston.set_value(true);
-        intake_motor.move(127);
-        turn_to_face(0, turnpid);
-        move_one_dir(0, movepid, 'y');
-        */
+
         intake_motor.move(0);
         autoclamp.remove();
         check_colour_task.remove();
+        lil_rev_task.remove();
     }
 
     else if (route_num == 2) {
-        
+        pros::Task check_colour_task(Check_colour);
+        inertial_sensor.set_heading(180);
+        position.theta = 180;
+
+        position.x = 4; position.y = 4.5;
+
+        const double lb_rest_pos = 360;
+        const double lb_pickup_pos = 335;
+        const double lb_score_pos = 232;
+        const double lb_tolerance = 5;
+
+        PID temp_movepid = PID(1.4, 4.5, 0.25, 50, 5);
+        PID temp_turnpid = PID(0.8, 0.1, 0.05, 45, 5);
+
+        move_one_dir(8.5, temp_movepid, 'y', -3);
+        turn_to_face(115, temp_turnpid); // 245
+
+        while (true) {
+            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+            while (lb_pos < 180) lb_pos += 360;
+            if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
+                lb_motors.move(0);
+                break;
+            } else {
+                lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_score_pos));
+            }
+
+            pros::delay(5);
+        }
+
+        turn_to_face(118, temp_turnpid); // 242
+        move_one_dir(36, temp_movepid, 'x', 0.9, 1750);
+        pros::delay(200);
+
+        turn_to_face(326, temp_turnpid); // 
+        intake_motor.move(127);
+        pros::delay(500);
+        pros::Task lil_rev_task(lil_rev);
+        move_one_dir(54.5, temp_movepid, 'x', -1, 1000);
+        // ring 1 on mogo ^
+        move_one_dir(46, temp_movepid, 'x', -1.3, 1000);
+        turn_to_face(320, temp_turnpid, 1.8); // 30
+        move_one_dir(54, temp_movepid, 'x', -1.5, 1000);
+        // ring 2 on mogo ^
+        pros::delay(200);
+
+        move_one_dir(-26, temp_movepid, 'y', 1.2, 1000);
+        pros::delay(700);
+        turn_to_face(40, temp_turnpid, 1.6); // 320
+        move_one_dir(32, temp_movepid, 'x', 1.3);
+        turn_to_face(212, turnpid); // 160
+
+        left_drive_motors.move(-50); right_drive_motors.move(50);
+        autoclamp.remove();
+        check_colour_task.remove();
+        lil_rev_task.remove();
     }
 
 }
