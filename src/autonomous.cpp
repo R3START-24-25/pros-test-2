@@ -68,7 +68,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 2;
+const int route_num = 0;
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -111,7 +111,7 @@ void autonomous() {
         move_one_dir(-13, movepid, 'y');
         turn_to_face(270, turnpid);
         move_one_dir(-19, movepid, 'x', -1);
-        //mogo_piston.set_value(true);
+        mogo_piston.set_value(true);
         turn_to_face(0, turnpid);
         intake_motor.move_velocity(200);
         move_one_dir(-37, movepid, 'y');
@@ -134,6 +134,7 @@ void autonomous() {
 
         move_to_point_straight(Point(6,-16.5), movepid, turnpid, 'x', true, false, 1, 90, 2500);
         move_one_dir(23, movepid, 'x');
+        mogo_piston.set_value(true);
         // picked up mogo ^
         turn_to_face(5, turnpid);
         intake_motor.move_velocity(200);
@@ -151,6 +152,7 @@ void autonomous() {
         move_one_dir(-18, movepid, 'y', 1.1);
         // ring 5 ^
         turn_to_face(30, turnpid);
+        intake_motor.move(0);
         move_one_dir(-6, movepid, 'y', 1.1, 1000);
         mogo_piston.set_value(false);
         // mogo in corner
@@ -165,8 +167,14 @@ void autonomous() {
         move_one_dir(80, movepid, 'x', 1.4, 2000);
         pros::delay(500);
         mogo_piston.set_value(false);
-        move_one_dir(60, movepid, 'x', -0.6);
+        move_one_dir(30, movepid, 'x', 0.6);
         // mogo in corner ^
+        turn_to_face(260, turnpid, 1);
+        //move_to_point_straight(Point(-37,-116), movepid, turnpid, 'y', false, false, 1);
+        //turn_to_face(250, turnpid);
+        move_one_dir(-100, movepid, 'x', -1.4, 2000);
+        mogo_piston.set_value(false);
+        move_one_dir(-30, movepid, 'x', -1.4, 2000);
 
         autoclamp.remove();
     }
@@ -266,14 +274,15 @@ void autonomous() {
         move_one_dir(36, temp_movepid, 'x', 0.9, 1750);
         pros::delay(200);
 
-        turn_to_face(326, temp_turnpid); // 
+        turn_to_face(332, temp_turnpid); // 
         intake_motor.move(127);
         pros::delay(500);
         pros::Task lil_rev_task(lil_rev);
         move_one_dir(54.5, temp_movepid, 'x', -1, 1000);
         // ring 1 on mogo ^
-        move_one_dir(46, temp_movepid, 'x', -1.3, 1000);
         turn_to_face(320, temp_turnpid, 1.8); // 30
+        move_one_dir(46, temp_movepid, 'x', -1.3, 1000);
+        turn_to_face(330, temp_turnpid, 2.8); // 30
         move_one_dir(54, temp_movepid, 'x', -1.5, 1000);
         // ring 2 on mogo ^
         pros::delay(200);
@@ -281,8 +290,8 @@ void autonomous() {
         move_one_dir(-26, temp_movepid, 'y', 1.2, 1000);
         pros::delay(700);
         turn_to_face(40, temp_turnpid, 1.6); // 320
-        move_one_dir(32, temp_movepid, 'x', 1.3);
-        turn_to_face(212, turnpid); // 160
+        move_one_dir(36, temp_movepid, 'x', 1.3);
+        turn_to_face(203, turnpid); // 160
 
         left_drive_motors.move(-50); right_drive_motors.move(50);
         autoclamp.remove();
