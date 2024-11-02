@@ -111,6 +111,7 @@ double turn_pid(PID pid, double target) {
 }
 
 void turn_to_face(double heading, PID pid, double mult) {
+    int time = 0;
     double turn_pid_out = 127;
     pid.start = true;
 
@@ -125,6 +126,9 @@ void turn_to_face(double heading, PID pid, double mult) {
         right_drive_motors.move(turn_pid_out*mult);
 
         pros::delay(5);
+        
+        time += 5;
+        if (time >= 2500) break;
     }
 
     left_drive_motors.move(0); right_drive_motors.move(0);

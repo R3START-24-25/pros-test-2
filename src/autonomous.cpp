@@ -68,7 +68,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 0;
+const int route_num = 1;
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -172,7 +172,7 @@ void autonomous() {
         turn_to_face(260, turnpid, 1);
         //move_to_point_straight(Point(-37,-116), movepid, turnpid, 'y', false, false, 1);
         //turn_to_face(250, turnpid);
-        move_one_dir(-100, movepid, 'x', -1.4, 2000);
+        move_one_dir(-110, movepid, 'x', -1.4, 3000);
         mogo_piston.set_value(false);
         move_one_dir(-30, movepid, 'x', -1.4, 2000);
 
@@ -212,6 +212,7 @@ void autonomous() {
 
         turn_to_face(242, temp_turnpid); //
         move_one_dir(-34, temp_movepid, 'x', -0.9, 1750);
+        mogo_piston.set_value(true);
         pros::delay(200);
 
         turn_to_face(34, temp_turnpid);
@@ -254,7 +255,7 @@ void autonomous() {
         PID temp_movepid = PID(1.4, 4.5, 0.25, 50, 5);
         PID temp_turnpid = PID(0.8, 0.1, 0.05, 45, 5);
 
-        move_one_dir(8.5, temp_movepid, 'y', -3);
+        move_one_dir(8.7, temp_movepid, 'y', -3);
         turn_to_face(115, temp_turnpid); // 245
 
         while (true) {
@@ -272,18 +273,19 @@ void autonomous() {
 
         turn_to_face(118, temp_turnpid); // 242
         move_one_dir(36, temp_movepid, 'x', 0.9, 1750);
+        mogo_piston.set_value(true);
         pros::delay(200);
 
         turn_to_face(332, temp_turnpid); // 
         intake_motor.move(127);
         pros::delay(500);
         pros::Task lil_rev_task(lil_rev);
-        move_one_dir(54.5, temp_movepid, 'x', -1, 1000);
+        move_one_dir(54, temp_movepid, 'x', -1, 1000);
         // ring 1 on mogo ^
         turn_to_face(320, temp_turnpid, 1.8); // 30
         move_one_dir(46, temp_movepid, 'x', -1.3, 1000);
         turn_to_face(330, temp_turnpid, 2.8); // 30
-        move_one_dir(54, temp_movepid, 'x', -1.5, 1000);
+        move_one_dir(53.5, temp_movepid, 'x', -1.5, 1000);
         // ring 2 on mogo ^
         pros::delay(200);
 
