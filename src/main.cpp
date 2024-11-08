@@ -52,29 +52,14 @@ double arm_pid(PID pid, double pos, double target) {
     }
 
     float p_i_d = (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+    p_i_d = p_i_d > 65 ? 65 : p_i_d;
     return p_i_d;
 }
 
 bool reversing = false;
 bool can_intake = true;
 
-void check_colour() {
-    const bool blue = false;
-    optical_sensor.set_led_pwm(100); // 90 blue 150 red
-
-    while (true) {
-        if (((blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 90)) && controller.get_digital(DIGITAL_L1)) {
-            pros::delay(300);
-            if (controller.get_digital(DIGITAL_L1)) {
-                can_intake = false;
-                intake_motor.move(0);
-                pros::delay(350);
-                can_intake = true;
-            }
-        }
-        
-        pros::delay(10);
-    }
+void check_colour(int count) {
 
     std::cout << "blue: " << optical_sensor.get_rgb().blue;
     std::cout << " green: " << optical_sensor.get_rgb().green;
@@ -97,6 +82,8 @@ void initialize() {
     //pros::Task colour_task(check_colour);
 
     lb_motors.set_brake_mode(pros::MotorBrake::hold);
+
+    optical_sensor.set_led_pwm(100); // 90 blue 150 red
 }
 
 void disabled() {}
@@ -107,7 +94,7 @@ void competition_initialize() {}
 
 // INCREASE THREASHOLDS, MERGE CODE, CRY!
 
-PID armpid = PID(1.50, 0.2, 0.15, 50, 5);
+PID armpid = PID(1.8, 0.4, 0.15, 50, 5);
 
 bool within_tolerance(double current, double target, double tolerance) {
     if (current - tolerance < target && current + tolerance > target) return true;
@@ -116,6 +103,11 @@ bool within_tolerance(double current, double target, double tolerance) {
 
 
 void opcontrol() {
+    inertial_sensor.set_heading(34);
+    position.theta = 34;
+
+    const bool blue = false;
+
     while (inertial_sensor.is_calibrating()) pros::delay(5);
     left_drive_motors.set_brake_mode(pros::MotorBrake::coast);
     right_drive_motors.set_brake_mode(pros::MotorBrake::coast);
@@ -129,15 +121,17 @@ void opcontrol() {
     bool claw_lifted = false;
 
     int count = 0;
+    int colour_count = 0;
     int last_unclamp = 0;
     int last_autoclamp = -100;
     bool can_autoclamp = true;
 
     const double lb_rest_pos = 360;
-    const double lb_pickup_pos = 335;
-    const double lb_score_pos = 232;
-    const double lb_tolerance = 5;
-    int lb_state = 0; // 0 = still, 1 = move to rest, 2 = move to pickup, 3 = move to score
+    const double lb_pickup_pos = 337.5;
+    const double lb_score_pos = 235;
+    const double lb_doublescore_pos = 225;
+    const double lb_tolerance = 2.5;
+    int lb_state = 0; // 0 = still, 1 = move to rest, 2 = move to pickup, 3 = move to score // 4 = doublescore
     int lb_dir = 1;
 
     while (true) {
@@ -158,11 +152,9 @@ void opcontrol() {
         }
         if (mogo_distance.get_distance() > 40 && count > last_unclamp + 200) can_autoclamp = true;
 
-        if (controller.get_digital(DIGITAL_L1) && can_intake)
-            intake_motor.move(127);
-        else if (controller.get_digital(DIGITAL_L2)
-                && !reversing) intake_motor.move(-127);
-        else if (!reversing) intake_motor.move(0);
+        if (controller.get_digital(DIGITAL_L1) && can_intake) intake_motor.move(127);
+        else if (controller.get_digital(DIGITAL_L2) && !reversing && can_intake) intake_motor.move(-127);
+        else if (!reversing && can_intake) intake_motor.move(0);
 
         if (controller.get_digital(DIGITAL_RIGHT)) doinker_piston.set_value(true);
         else doinker_piston.set_value(false);
@@ -183,8 +175,11 @@ void opcontrol() {
             }
         }
         if (controller.get_digital_new_press(DIGITAL_Y)) {
-            if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
+            if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance) || lb_state == 2) {
                 lb_state = 3;
+                lb_dir = -1;
+            } else if (within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
+                lb_state = 4;
                 lb_dir = -1;
             }
         }
@@ -216,6 +211,32 @@ void opcontrol() {
                     lb_motors.move(lb_dir * arm_pid(armpid, lb_pos, lb_score_pos));
                 }
                 break;
+            case 4:
+                if (within_tolerance(lb_pos, lb_doublescore_pos, lb_tolerance)) {
+                    lb_motors.move_velocity(0);
+                    lb_state = 0;
+                } else {
+                    lb_motors.move(lb_dir * arm_pid(armpid, lb_pos, lb_doublescore_pos));
+                    lb_state = 0;
+                }
+                break;
+        }
+
+        int spotted_first_count = -1;
+        int reverse_start_count = -1;
+        if (spotted_first_count < 0 && reverse_start_count < 0 && ((blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 90)) && controller.get_digital(DIGITAL_L1)) {
+            spotted_first_count = colour_count;
+            can_intake = false;
+        }
+        if (colour_count == spotted_first_count + 60) {
+            intake_motor.move(-127);
+            reverse_start_count = colour_count;
+            spotted_first_count = -1;
+        }
+        if (colour_count == reverse_start_count + 60) {
+            intake_motor.move(0);
+            can_intake = true;
+            reverse_start_count = -1;
         }
 
         if (count % 500 == 0) {
@@ -223,6 +244,7 @@ void opcontrol() {
             std::cout << "lb pos: " << lb_pos << std::endl;
         }
         count++;
+        colour_count++;
 
         pros::delay(5);
     }

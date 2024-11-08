@@ -25,12 +25,13 @@ double Arm_pid(PID pid, double pos, double target) {
     }
 
     float p_i_d = (delta_position * pid.kP) + (pid.integral * pid.kI) + (derivative * pid.kD);
+    p_i_d = p_i_d > 65 ? 65 : p_i_d;
     return p_i_d;
 }
 
 PID movepid = PID(1.4, 4.5, 0.25, 50, 5);
 PID turnpid = PID(0.8, 0.1, 0.05, 45, 5);
-PID Armpid = PID(1.50, 0.2, 0.15, 50, 5);
+PID Armpid = PID(1.75, 0.3, 0.15, 50, 5);
 
 bool can_autoclamp = true;
 
@@ -49,8 +50,8 @@ bool Within_tolerance(double current, double target, double tolerance) {
 
 void lb_down() {
     const double lb_rest_pos = 360;
-    const double lb_pickup_pos = 335;
-    const double lb_score_pos = 232;
+    const double lb_pickup_pos = 337.5;
+    const double lb_score_pos = 235;
     const double lb_tolerance = 5;
 
     while (true) {
@@ -68,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 1;
+const int route_num = 4;
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -179,7 +180,7 @@ void autonomous() {
         autoclamp.remove();
     }
 
-    else if (route_num == 1) {
+    else if (route_num == 1) { // red
         pros::Task check_colour_task(Check_colour);
         inertial_sensor.set_heading(180);
         position.theta = 180;
@@ -299,6 +300,44 @@ void autonomous() {
         autoclamp.remove();
         check_colour_task.remove();
         lil_rev_task.remove();
+    }
+
+    else if (route_num == 3) {
+        PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
+        PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
+
+        turn_to_face_new(90, new_turnpid);
+        pros::delay(5000);
+        std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
+    }
+
+    else if (route_num == 4) { // new red awp
+        PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
+        PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
+
+        inertial_sensor.set_heading(34);
+        position.theta = 34;
+
+        move_one_dir_advanced(Point(20, 29), new_movepid, new_turnpid, 'y', 0.9);
+        intake_motor.move(127);
+        turn_to_face_new(120, new_turnpid);
+        move_one_dir_advanced(Point(5, 41), new_movepid, new_turnpid, 'y', -1.2);
+        turn_to_face_new(140, new_turnpid, 1.8);
+        move_one_dir_advanced(Point(5, 36), new_movepid, new_turnpid, 'y', -1.7);
+        turn_to_face_new(130, new_turnpid, 1.7);
+        move_one_dir_advanced(Point(-5, 41), new_movepid, new_turnpid, 'x', 1.4);
+        // 3 discs picked up ^^
+        move_one_dir_advanced(Point(5, 37), new_movepid, new_turnpid, 'x', 1.7);
+        turn_to_face_new(50, turnpid);
+        mogo_piston.set_value(false);
+        move_one_dir_advanced(Point(3, 33), new_movepid, new_turnpid, 'x', 1.7);
+
+        turn_to_face_new(0, turnpid);
+        //move_one_dir_advanced(Point(45,0), new_movepid, new_turnpid, 'x');
+        move_to_point_straight(Point(45,0), new_movepid, new_turnpid, 'x', false);
+        turn_to_face_new(180, turnpid);
+        left_drive_motors.move(30);
+        right_drive_motors.move(-30);
     }
 
 }

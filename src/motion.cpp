@@ -28,9 +28,6 @@ double move_pid(PID pid, Point target, char axis, bool rev = false) {
     if (!pid.start && pid.sign != localsign) pid.oscillated++;
     pid.sign = localsign;
 
-    //if (pid.oscillated > 0 && axis == 'y') delta_position = target.y - position.y;
-    //if (pid.oscillated > 0 && axis == 'x') delta_position = target.x - position.x;
-    
     pid.integral = fabs(delta_position) > 2.5 && delta_position < pid.integral_threshold
         ? pid.integral + delta_position
         : 0;
@@ -134,6 +131,30 @@ void turn_to_face(double heading, PID pid, double mult) {
     left_drive_motors.move(0); right_drive_motors.move(0);
 }
 
+void turn_to_face_new(double heading, PID pid, double mult) {
+    int time = 0;
+    double turn_pid_out = 127;
+    pid.start = true;
+
+    while (fabs(turn_pid_out) > 0.6) {
+        turn_pid_out = turn_pid(pid, heading);
+        if (fabs(turn_pid_out) <= 0.6) break;
+
+        turn_pid_out = fabs(turn_pid_out) < 16 ? (turn_pid_out > 0 ? 16 : -16) : turn_pid_out;
+        turn_pid_out = fabs(turn_pid_out) > 70 ? (turn_pid_out > 0 ? 70 : -70) : turn_pid_out;
+
+        left_drive_motors.move(turn_pid_out*mult);
+        right_drive_motors.move(turn_pid_out*mult);
+
+        pros::delay(5);
+        
+        time += 5;
+        if (time >= 2500) break;
+    }
+
+    left_drive_motors.move(0); right_drive_motors.move(0);
+}
+
 void move_one_dir(double pos, PID pid, char axis, double dir, int timeout) {
     int time = 0;
     double linear_pid_out = 127;
@@ -144,6 +165,36 @@ void move_one_dir(double pos, PID pid, char axis, double dir, int timeout) {
 
         linear_pid_out = fabs(linear_pid_out) < 12 && fabs(linear_pid_out) > 0.75 ? (linear_pid_out > 0 ? 12 : -12) : linear_pid_out;
         linear_pid_out = fabs(linear_pid_out) > 60 ? (linear_pid_out > 0 ? 60 : -60) : linear_pid_out;
+
+        left_drive_motors.move(linear_pid_out * dir);
+        right_drive_motors.move(-linear_pid_out * dir);
+
+        pros::delay(5);
+        time += 5;
+
+        if (time >= timeout) break;
+    }
+
+    left_drive_motors.move(0); right_drive_motors.move(0);
+}
+
+void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double dir, int timeout) {
+    int time = 0;
+    double linear_pid_out = 127;
+    pid.start = true;
+    double pos = axis == 'x' ? target.x : target.y;
+
+    double abs_turn_to = atan2f(target.x - position.x, target.y - position.y) * (180/M_PI);
+    if (abs_turn_to < 0) abs_turn_to += 180;
+
+    //turn_to_face_new(abs_turn_to, turnpid);
+    //std::cout << "abs turn to: " << abs_turn_to << std::endl;
+
+    while (fabs(linear_pid_out) > 0.6) {
+        linear_pid_out = move_pid_one_dir(pid, pos, axis);
+
+        linear_pid_out = fabs(linear_pid_out) < 12 && fabs(linear_pid_out) > 0.60 ? (linear_pid_out > 0 ? 12 : -12) : linear_pid_out;
+        linear_pid_out = fabs(linear_pid_out) > 90 ? (linear_pid_out > 0 ? 90 : -90) : linear_pid_out;
 
         left_drive_motors.move(linear_pid_out * dir);
         right_drive_motors.move(-linear_pid_out * dir);
