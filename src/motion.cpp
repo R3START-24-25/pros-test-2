@@ -24,11 +24,14 @@ double move_pid(PID pid, Point target, char axis, bool rev = false) {
     double delta_position = disp_between_pts(current_position, target);
     if (rev) delta_position = disp_between_pts(target, current_position);
 
+    if (fabs(delta_position) < 0.2) return 0;
+
     bool localsign = delta_position > 0 ? true : false;
     if (!pid.start && pid.sign != localsign) pid.oscillated++;
+    if (pid.oscillated == 1) return 0;
     pid.sign = localsign;
 
-    pid.integral = fabs(delta_position) > 2.5 && delta_position < pid.integral_threshold
+    pid.integral = fabs(delta_position) > 2.5 && fabs(delta_position) < pid.integral_threshold
         ? pid.integral + delta_position
         : 0;
     
@@ -193,7 +196,7 @@ void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double
     while (fabs(linear_pid_out) > 0.6) {
         linear_pid_out = move_pid_one_dir(pid, pos, axis);
 
-        linear_pid_out = fabs(linear_pid_out) < 12 && fabs(linear_pid_out) > 0.60 ? (linear_pid_out > 0 ? 12 : -12) : linear_pid_out;
+        linear_pid_out = fabs(linear_pid_out) < 14 && fabs(linear_pid_out) > 0.60 ? (linear_pid_out > 0 ? 14 : -14) : linear_pid_out;
         linear_pid_out = fabs(linear_pid_out) > 90 ? (linear_pid_out > 0 ? 90 : -90) : linear_pid_out;
 
         left_drive_motors.move(linear_pid_out * dir);
@@ -218,7 +221,7 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
 
     turnpid.start = true;
     movepid.start = true;
-    while (fabs(turn_pid_out) > 0.6 || fabs(linear_pid_out) > 0.25) {
+    while (fabs(turn_pid_out) > 3.6 || fabs(linear_pid_out) > 0.5) {
         double dx = target.x - position.x; //30
         double dy = target.y - position.y; //-5
         if (fabs(dx) + fabs(dy) > 3) {
@@ -236,7 +239,7 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
 
         linear_pid_out = move_pid(movepid, target, axis, xrev);
 
-        linear_pid_out = fabs(linear_pid_out) < 10 && fabs(linear_pid_out) > 0.25 ? (linear_pid_out > 0 ? 10 : -10) : linear_pid_out;
+        linear_pid_out = fabs(linear_pid_out) < 10 && fabs(linear_pid_out) > 0.5 ? (linear_pid_out > 0 ? 10 : -10) : linear_pid_out;
         linear_pid_out = fabs(linear_pid_out) > 60 ? (linear_pid_out > 0 ? 60 : -60) : linear_pid_out;
 
         if (xrev) linear_pid_out *= 1;
@@ -248,7 +251,11 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
         time += 5;
 
         if (time >= timeout) break;
+
+        if ((axis == 'x' ? fabs(dx) : fabs(dy)) < 2) break;
     }
+
+    left_drive_motors.move(0); right_drive_motors.move(0);
 
     if (turn) turn_to_face(heading, turnpid);
 }

@@ -59,13 +59,6 @@ double arm_pid(PID pid, double pos, double target) {
 bool reversing = false;
 bool can_intake = true;
 
-void check_colour(int count) {
-
-    std::cout << "blue: " << optical_sensor.get_rgb().blue;
-    std::cout << " green: " << optical_sensor.get_rgb().green;
-    std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
-}
-
 void initialize() {
     left_encoder.reset_position();
     left_encoder.set_data_rate(5);

@@ -318,26 +318,41 @@ void autonomous() {
         inertial_sensor.set_heading(34);
         position.theta = 34;
 
-        move_one_dir_advanced(Point(20, 29), new_movepid, new_turnpid, 'y', 0.9);
+        move_one_dir_advanced(Point(20, 28.5), new_movepid, new_turnpid, 'y', 0.9);
         intake_motor.move(127);
-        turn_to_face_new(120, new_turnpid);
+        turn_to_face_new(120, new_turnpid, 1.2);
         move_one_dir_advanced(Point(5, 41), new_movepid, new_turnpid, 'y', -1.2);
-        turn_to_face_new(140, new_turnpid, 1.8);
+        turn_to_face_new(140, new_turnpid, 1.5);
         move_one_dir_advanced(Point(5, 36), new_movepid, new_turnpid, 'y', -1.7);
-        turn_to_face_new(130, new_turnpid, 1.7);
+        turn_to_face_new(130, new_turnpid, 1.5);
         move_one_dir_advanced(Point(-5, 41), new_movepid, new_turnpid, 'x', 1.4);
         // 3 discs picked up ^^
         move_one_dir_advanced(Point(5, 37), new_movepid, new_turnpid, 'x', 1.7);
-        turn_to_face_new(50, turnpid);
+        turn_to_face_new(50, turnpid, 1.2);
         mogo_piston.set_value(false);
         move_one_dir_advanced(Point(3, 33), new_movepid, new_turnpid, 'x', 1.7);
 
-        turn_to_face_new(0, turnpid);
+        turn_to_face_new(0, turnpid, 2);
+        intake_motor.move(0);
+        left_drive_motors.move(-70); right_drive_motors.move(70);
+        pros::delay(250);
+
         //move_one_dir_advanced(Point(45,0), new_movepid, new_turnpid, 'x');
-        move_to_point_straight(Point(45,0), new_movepid, new_turnpid, 'x', false);
-        turn_to_face_new(180, turnpid);
-        left_drive_motors.move(30);
-        right_drive_motors.move(-30);
+        move_to_point_straight(Point(45.5, -3), new_movepid, new_turnpid, 'x', false);
+        turn_to_face_new(185, turnpid, 1.2);
+
+        left_drive_motors.move(25); right_drive_motors.move(-25);
+        pros::delay(200);
+        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+        intake_motor.move(127);
+        pros::delay(1000);
+        intake_motor.move(0);
+
+        move_one_dir_advanced(Point(46, 3), new_movepid, new_turnpid, 'y', -1.6);
+        turn_to_face_new(50, new_turnpid, 1.3);
+        move_one_dir_advanced(Point(50, 31), new_movepid, new_turnpid, 'y');
+        turn_to_face_new(270, new_turnpid, 1.5);
     }
 
 }
