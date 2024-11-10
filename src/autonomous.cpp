@@ -91,14 +91,14 @@ void Check_colour() {
     std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
 }
 
-void lil_rev() {
+void red_sort() {
+    bool blue = false;
     while (true) {
-        if (fabs(intake_motor.get_actual_velocity()) < 10) {
-            intake_motor.move(-127);
-            pros::delay(250);
-            intake_motor.move(127);
+        if ( (!blue && optical_sensor.get_rgb().red > 150) || (blue && optical_sensor.get_rgb().blue > 90) ) {
+            pros::delay(200);
+            intake_motor.move(0);
         }
-        pros::delay(20);
+        pros::delay(10);
     }
 }
 
@@ -219,7 +219,6 @@ void autonomous() {
         turn_to_face(34, temp_turnpid);
         intake_motor.move(127);
         pros::delay(500);
-        pros::Task lil_rev_task(lil_rev);
         move_one_dir(-48, temp_movepid, 'x', 1, 1000);
         // ring 1 on mogo ^
         move_one_dir(-42, temp_movepid, 'x', 1.3, 1000);
@@ -238,7 +237,6 @@ void autonomous() {
         intake_motor.move(0);
         autoclamp.remove();
         check_colour_task.remove();
-        lil_rev_task.remove();
     }
 
     else if (route_num == 2) {
@@ -280,7 +278,6 @@ void autonomous() {
         turn_to_face(332, temp_turnpid); // 
         intake_motor.move(127);
         pros::delay(500);
-        pros::Task lil_rev_task(lil_rev);
         move_one_dir(54, temp_movepid, 'x', -1, 1000);
         // ring 1 on mogo ^
         turn_to_face(320, temp_turnpid, 1.8); // 30
@@ -299,7 +296,6 @@ void autonomous() {
         left_drive_motors.move(-50); right_drive_motors.move(50);
         autoclamp.remove();
         check_colour_task.remove();
-        lil_rev_task.remove();
     }
 
     else if (route_num == 3) {
@@ -316,7 +312,9 @@ void autonomous() {
         PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
 
         inertial_sensor.set_heading(34);
+        inertial_sensor.set_rotation(34);
         position.theta = 34;
+        pros::Task odom_task(track_robot);
 
         move_one_dir_advanced(Point(20, 28.5), new_movepid, new_turnpid, 'y', 0.9);
         intake_motor.move(127);
@@ -326,20 +324,22 @@ void autonomous() {
         move_one_dir_advanced(Point(5, 36), new_movepid, new_turnpid, 'y', -1.7);
         turn_to_face_new(130, new_turnpid, 1.5);
         move_one_dir_advanced(Point(-5, 41), new_movepid, new_turnpid, 'x', 1.4);
-        // 3 discs picked up ^^
+        // 2 discs picked up ^^
         move_one_dir_advanced(Point(5, 37), new_movepid, new_turnpid, 'x', 1.7);
         turn_to_face_new(50, turnpid, 1.2);
+        pros::Task redsort(red_sort);
         mogo_piston.set_value(false);
         move_one_dir_advanced(Point(3, 33), new_movepid, new_turnpid, 'x', 1.7);
 
         turn_to_face_new(0, turnpid, 2);
-        intake_motor.move(0);
         left_drive_motors.move(-70); right_drive_motors.move(70);
         pros::delay(250);
 
         //move_one_dir_advanced(Point(45,0), new_movepid, new_turnpid, 'x');
         move_to_point_straight(Point(45.5, -3), new_movepid, new_turnpid, 'x', false);
-        turn_to_face_new(185, turnpid, 1.2);
+        turn_to_face_new(175, turnpid, 1.2);
+
+        redsort.remove();
 
         left_drive_motors.move(25); right_drive_motors.move(-25);
         pros::delay(200);

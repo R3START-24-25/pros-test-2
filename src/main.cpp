@@ -71,8 +71,7 @@ void initialize() {
     left_drive_motors.tare_position_all();
     right_drive_motors.tare_position_all();
 
-    pros::Task odom_task(track_robot);
-    //pros::Task colour_task(check_colour);
+    //pros::Task odom_task(track_robot);
 
     lb_motors.set_brake_mode(pros::MotorBrake::hold);
 
@@ -84,7 +83,6 @@ void disabled() {}
 // after init when in comp
 void competition_initialize() {}
 
-
 // INCREASE THREASHOLDS, MERGE CODE, CRY!
 
 PID armpid = PID(1.8, 0.4, 0.15, 50, 5);
@@ -93,7 +91,6 @@ bool within_tolerance(double current, double target, double tolerance) {
     if (current - tolerance < target && current + tolerance > target) return true;
     return false;
 }
-
 
 void opcontrol() {
     inertial_sensor.set_heading(34);
@@ -221,15 +218,15 @@ void opcontrol() {
             spotted_first_count = colour_count;
             can_intake = false;
         }
-        if (colour_count == spotted_first_count + 60) {
+        if (spotted_first_count > 0 && colour_count == spotted_first_count + 60) {
             intake_motor.move(-127);
             reverse_start_count = colour_count;
-            spotted_first_count = -1;
         }
-        if (colour_count == reverse_start_count + 60) {
+        if (reverse_start_count > 0 && colour_count == reverse_start_count + 60) {
             intake_motor.move(0);
             can_intake = true;
             reverse_start_count = -1;
+            spotted_first_count = -1;
         }
 
         if (count % 500 == 0) {

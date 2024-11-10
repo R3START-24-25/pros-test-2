@@ -251,8 +251,6 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
         time += 5;
 
         if (time >= timeout) break;
-
-        if ((axis == 'x' ? fabs(dx) : fabs(dy)) < 2) break;
     }
 
     left_drive_motors.move(0); right_drive_motors.move(0);

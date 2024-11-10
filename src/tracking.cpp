@@ -7,9 +7,12 @@ void track_robot() {
     const float wheel_diameter = 2; // inches
     const float temp_wheel_diameter = 2.0625; // inches
 
-    float last_imu_reading = 0;
+    float last_imu_reading  = 0;
     float last_left_reading = 0;
     float last_back_reading = 0;
+
+    float last_drive_left_reading = 0;
+    float last_drive_right_reading = 0;
 
     position.x = 0;
     position.y = 0;
@@ -18,26 +21,27 @@ void track_robot() {
     while (inertial_sensor.is_calibrating()) pros::c::delay(10);
 
 	while (true) {
-        float imu_reading = inertial_sensor.get_heading();
+        //float imu_reading = inertial_sensor.get_heading();
         float left_reading = left_encoder.get_position() / 100.0; // convert to degrees
         float back_reading = back_encoder.get_position() / 100.0;
-        //float left_reading = (left_drive_motors.get_position() - right_drive_motors.get_position()) / 2;
-        if (imu_reading > 360) imu_reading = 0;
+        //if (imu_reading > 360) imu_reading = 0;
 
-        float delta_theta = imu_reading - last_imu_reading;
+        //float delta_theta = imu_reading - last_imu_reading;
+        float delta_left_drive_reading = left_drive_motors.get_position() - last_drive_left_reading;
+        float delta_right_drive_reading = right_drive_motors.get_position() - last_drive_right_reading;
+        float delta_theta = M_PI*temp_wheel_diameter * (delta_left_drive_reading/360);
+
         if (delta_theta > 180) delta_theta -= 360; // assume wraparoud
         else if (delta_theta < -180) delta_theta += 360;
         float delta_left_reading = left_reading - last_left_reading;
         float delta_back_reading = back_reading - last_back_reading;
 
         float delta_dist_left = M_PI*wheel_diameter * (delta_left_reading/360);
-        //float delta_dist_left = M_PI*temp_wheel_diameter * (delta_left_reading/360);
         float delta_dist_back = M_PI*wheel_diameter * (delta_back_reading/360);
 
         position.theta = imu_reading;
 
         float delta_local_offset[2];
-      //if (fabs(delta_theta) < 0.0001) {
         if (fabs(delta_theta) < 0.001) {
             delta_local_offset[0] = delta_dist_back;
             delta_local_offset[1] = delta_dist_left;
