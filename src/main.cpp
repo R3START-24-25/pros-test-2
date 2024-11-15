@@ -209,23 +209,6 @@ void opcontrol() {
                 break;
         }
 
-        int spotted_first_count = -1;
-        int reverse_start_count = -1;
-        if (spotted_first_count < 0 && reverse_start_count < 0 && ((blue && optical_sensor.get_rgb().red > 150) || (!blue && optical_sensor.get_rgb().blue > 90)) && controller.get_digital(DIGITAL_L1)) {
-            spotted_first_count = colour_count;
-            can_intake = false;
-        }
-        if (spotted_first_count > 0 && colour_count == spotted_first_count + 60) {
-            intake_motor.move(-127);
-            reverse_start_count = colour_count;
-        }
-        if (reverse_start_count > 0 && colour_count == reverse_start_count + 60) {
-            intake_motor.move(0);
-            can_intake = true;
-            reverse_start_count = -1;
-            spotted_first_count = -1;
-        }
-
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
             std::cout << "lb pos: " << lb_pos << std::endl;

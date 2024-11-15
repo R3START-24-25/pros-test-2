@@ -107,7 +107,6 @@ void colour_sort() {
 }
 
 void red_sort() {
-    bool blue = false;
     while (true) {
         if (optical_sensor.get_proximity() > 140) {
             intake_motor.move(0);
@@ -303,40 +302,40 @@ void autonomous() {
         PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
         PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
 
-        inertial_sensor.set_heading(29);
-        inertial_sensor.set_rotation(29);
-        position.theta = 29;
+        inertial_sensor.set_heading(331); // 360 - 29
+        inertial_sensor.set_rotation(331);
+        position.theta = 331;
 
-        move_one_dir_advanced(Point(20, 27), new_movepid, new_turnpid, 'y', 0.8);
+        move_one_dir_advanced(Point(-20, 27), new_movepid, new_turnpid, 'y', 0.8);
         mogo_piston.set_value(true);
         // pick up mogo ^
-        move_one_dir_advanced(Point(20, 23.5), new_movepid, new_turnpid, 'y', 1.5);
+        move_one_dir_advanced(Point(-20, 23.5), new_movepid, new_turnpid, 'y', 1.5);
         intake_motor.move(127);
-        turn_to_face_new(130, new_turnpid, 1.2);
-        move_one_dir_advanced(Point(5, 40.5), new_movepid, new_turnpid, 'y', -1.2);
+        turn_to_face_new(230, new_turnpid, 1.2); // 360 - 130
+        move_one_dir_advanced(Point(-5, 40.5), new_movepid, new_turnpid, 'y', -1.2);
         // pick up ring 1 ^
-        turn_to_face_new(150, new_turnpid, 1.5);
-        move_one_dir_advanced(Point(5, 35), new_movepid, new_turnpid, 'y', -1.7);
+        turn_to_face_new(210, new_turnpid, 1.5); // 360 - 150
+        move_one_dir_advanced(Point(-5, 35), new_movepid, new_turnpid, 'y', -1.7);
         // reverse out ^
-        turn_to_face_new(140, new_turnpid, 1.5);
-        move_one_dir_advanced(Point(-8, 40.5), new_movepid, new_turnpid, 'y', -1.4);
+        turn_to_face_new(220, new_turnpid, 1.5); // 360 - 140
+        move_one_dir_advanced(Point(8, 40.5), new_movepid, new_turnpid, 'y', -1.4);
         pros::delay(400);
         // 2 discs picked up ^^
         move_one_dir_advanced(Point(0, 37), new_movepid, new_turnpid, 'x', 1.7);
-        turn_to_face_new(60, turnpid, 1.2);
+        turn_to_face_new(300, turnpid, 1.2); // 360 - 60
         pros::delay(400);
         coloursort.remove();
         pros::Task redsort(red_sort);
-        move_one_dir_advanced(Point(-5, 33), new_movepid, new_turnpid, 'x', 1.7);
+        move_one_dir_advanced(Point(5, 33), new_movepid, new_turnpid, 'x', 1.7);
 
-        turn_to_face_new(340, turnpid, 2);
+        turn_to_face_new(20, turnpid, 2); // 360 - 340
         left_drive_motors.move(-70); right_drive_motors.move(70);
         pros::delay(350);
         mogo_piston.set_value(false);
 
-        move_to_point_straight(Point(36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
-        move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9);
-        turn_to_face_new(186, turnpid, 1.2);
+        move_to_point_straight(Point(-36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
+        move_one_dir_advanced(Point(-37.1, -1), new_movepid, new_turnpid, 'x', -0.9);
+        turn_to_face_new(174, turnpid, 1.2); // 360 - 186
 
         redsort.remove();
         pros::Task lbup(lb_raise);
@@ -365,11 +364,7 @@ void autonomous() {
         left_drive_motors.move(0); right_drive_motors.move(0);
 
         lbup.remove();
-
-        //move_one_dir_advanced(Point(46, 3), new_movepid, new_turnpid, 'y', -1.6);
-        //turn_to_face_new(50, new_turnpid, 1.3);
-        //move_one_dir_advanced(Point(50, 31), new_movepid, new_turnpid, 'y');
-        //turn_to_face_new(270, new_turnpid, 1);
     }
+
     quickrev.remove();
 }
