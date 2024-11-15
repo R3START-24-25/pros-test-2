@@ -31,7 +31,7 @@ double Arm_pid(PID pid, double pos, double target) {
 
 PID movepid = PID(1.4, 4.5, 0.25, 50, 5);
 PID turnpid = PID(0.8, 0.1, 0.05, 45, 5);
-PID Armpid = PID(1.75, 0.3, 0.15, 50, 5);
+PID Armpid  = PID(1.3, 0.4, 0.15, 50, 5);
 
 bool can_autoclamp = true;
 
@@ -69,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 4;
+const int route_num = 0;
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -118,7 +118,7 @@ void red_sort() {
 
 void quick_rev() {
     while (true) {
-        if (intake_motor.get_actual_velocity() < 15 && intake_motor.get_power() > 5) {
+        if (fabs(intake_motor.get_actual_velocity()) < 10 && intake_motor.get_torque() > 2.5) {
             intake_motor.move(-127);
             pros::delay(150);
             intake_motor.move(127);
@@ -152,15 +152,18 @@ void autonomous() {
     pros::Task quickrev(quick_rev);
 
     if (route_num == 0) { // skills
-        intake_motor.move_velocity(200);
+        PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
+        PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
+
+        intake_motor.move_velocity(600);
         pros::delay(850);
         intake_motor.move(0);
-        move_one_dir(-13, movepid, 'y');
+        move_one_dir(-12, movepid, 'y');
         turn_to_face(270, turnpid);
         move_one_dir(-19, movepid, 'x', -1);
         mogo_piston.set_value(true);
         turn_to_face(0, turnpid);
-        intake_motor.move_velocity(200);
+        intake_motor.move_velocity(600);
         move_one_dir(-37, movepid, 'y');
         turn_to_face(84, turnpid);
         move_one_dir(-48, movepid, 'x');
@@ -184,7 +187,7 @@ void autonomous() {
         mogo_piston.set_value(true);
         // picked up mogo ^
         turn_to_face(5, turnpid);
-        intake_motor.move_velocity(200);
+        intake_motor.move_velocity(600);
         move_one_dir(-41, movepid, 'y');
         // ring 1 ^
         turn_to_face(275, turnpid);
@@ -321,20 +324,21 @@ void autonomous() {
         move_one_dir_advanced(Point(8, 40.5), new_movepid, new_turnpid, 'y', -1.4);
         pros::delay(400);
         // 2 discs picked up ^^
-        move_one_dir_advanced(Point(0, 37), new_movepid, new_turnpid, 'x', 1.7);
-        turn_to_face_new(300, turnpid, 1.2); // 360 - 60
+        move_one_dir_advanced(Point(0, 37), new_movepid, new_turnpid, 'x', -1.7);
+        turn_to_face_new(290, turnpid, 1.2); // 360 - 60
         pros::delay(400);
         coloursort.remove();
         pros::Task redsort(red_sort);
-        move_one_dir_advanced(Point(5, 33), new_movepid, new_turnpid, 'x', 1.7);
+        move_one_dir_advanced(Point(5, 33), new_movepid, new_turnpid, 'x', -1.7);
+        // 3 rings picked up ^^
 
-        turn_to_face_new(20, turnpid, 2); // 360 - 340
         left_drive_motors.move(-70); right_drive_motors.move(70);
-        pros::delay(350);
+        pros::delay(150);
+        turn_to_face_new(20, turnpid, 2); // 360 - 340
         mogo_piston.set_value(false);
 
         move_to_point_straight(Point(-36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
-        move_one_dir_advanced(Point(-37.1, -1), new_movepid, new_turnpid, 'x', -0.9);
+        move_one_dir_advanced(Point(-37.1, -1), new_movepid, new_turnpid, 'x', 0.9);
         turn_to_face_new(174, turnpid, 1.2); // 360 - 186
 
         redsort.remove();
@@ -353,17 +357,18 @@ void autonomous() {
         pros::delay(1000);
         intake_motor.move(0);
 
-        left_drive_motors.move(-75); right_drive_motors.move(75);
+        left_drive_motors.move(-95); right_drive_motors.move(95);
         pros::delay(200);
         while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
         pros::delay(100);
         left_drive_motors.move(0); right_drive_motors.move(0);
 
+        lbup.remove();
+
         left_drive_motors.move(-30); right_drive_motors.move(-30);
         pros::delay(200);
         left_drive_motors.move(0); right_drive_motors.move(0);
 
-        lbup.remove();
     }
 
     quickrev.remove();
