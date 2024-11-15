@@ -71,7 +71,7 @@ void initialize() {
     left_drive_motors.tare_position_all();
     right_drive_motors.tare_position_all();
 
-    //pros::Task odom_task(track_robot);
+    pros::Task odom_task(track_robot);
 
     lb_motors.set_brake_mode(pros::MotorBrake::hold);
 
@@ -93,9 +93,6 @@ bool within_tolerance(double current, double target, double tolerance) {
 }
 
 void opcontrol() {
-    inertial_sensor.set_heading(34);
-    position.theta = 34;
-
     const bool blue = false;
 
     while (inertial_sensor.is_calibrating()) pros::delay(5);
@@ -232,6 +229,9 @@ void opcontrol() {
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;
             std::cout << "lb pos: " << lb_pos << std::endl;
+            std::cout << "blue: " << optical_sensor.get_rgb().blue;
+            std::cout << " green: " << optical_sensor.get_rgb().green;
+            std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
         }
         count++;
         colour_count++;
