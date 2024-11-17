@@ -93,8 +93,6 @@ bool within_tolerance(double current, double target, double tolerance) {
 }
 
 void opcontrol() {
-    const bool blue = false;
-
     while (inertial_sensor.is_calibrating()) pros::delay(5);
     left_drive_motors.set_brake_mode(pros::MotorBrake::coast);
     right_drive_motors.set_brake_mode(pros::MotorBrake::coast);
@@ -117,10 +115,12 @@ void opcontrol() {
     const double lb_pickup_pos = 337.5;
     const double lb_score_pos = 235;
     const double lb_doublescore_pos = 225;
-    const double lb_tolerance = 2.5;
+    const double lb_tolerance = 3.5;
     int lb_state = 0; // 0 = still, 1 = move to rest, 2 = move to pickup, 3 = move to score // 4 = doublescore
     int lb_dir = 1;
 
+    lb_state = 1;
+    lb_dir = 1;
     while (true) {
         drive.movement();
 
@@ -146,9 +146,9 @@ void opcontrol() {
         if (controller.get_digital(DIGITAL_RIGHT)) doinker_piston.set_value(true);
         else doinker_piston.set_value(false);
 
+        // start lb
         double lb_pos = lb_rotation_sensor.get_position() / 100.0;
-        while (lb_pos < 180) lb_pos += 360;
-
+        while (lb_pos < 200) lb_pos += 360;
         if (controller.get_digital_new_press(DIGITAL_R2)) {
             if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
                 lb_state = 1;
@@ -162,13 +162,16 @@ void opcontrol() {
             }
         }
         if (controller.get_digital_new_press(DIGITAL_Y)) {
-            if (within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance) || lb_state == 2) {
-                lb_state = 3;
-                lb_dir = -1;
-            } else if (within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
-                lb_state = 4;
-                lb_dir = -1;
-            }
+            lb_state = 3;
+            lb_dir = -1;
+        }
+        //if (lb_pos < (lb_score_pos - 7)) {
+            //lb_state = 2;
+            //lb_dir = 1;
+        //}
+        if (controller.get_digital(DIGITAL_DOWN)) {
+            lb_state = 1;
+            lb_dir = 1;
         }
                 
         switch (lb_state) {
@@ -208,6 +211,7 @@ void opcontrol() {
                 }
                 break;
         }
+        // end lb
 
         if (count % 500 == 0) {
             std::cout << "x: " << position.x << ", y: " << position.y << ", theta: " << position.theta << std::endl;

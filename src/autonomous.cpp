@@ -69,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 0;
+const int route_num = 4; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -138,7 +138,7 @@ void lb_raise() {
         double lb_pos = lb_rotation_sensor.get_position() / 100.0;
         while (lb_pos < 180) lb_pos += 360;
         if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
-            lb_motors.move(0);
+            lb_motors.move(0); break;
         } else {
             lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_score_pos));
         }
@@ -182,7 +182,7 @@ void autonomous() {
 
         intake_motor.move(0);
 
-        move_to_point_straight(Point(6,-16.5), movepid, turnpid, 'x', true, false, 1, 90, 2500);
+        move_to_point_straight(Point(6,-16.5), movepid, turnpid, 'x', true, false, 1, 86, 2500);
         move_one_dir(23, movepid, 'x');
         mogo_piston.set_value(true);
         // picked up mogo ^
@@ -226,7 +226,19 @@ void autonomous() {
         mogo_piston.set_value(false);
         move_one_dir(-30, movepid, 'x', -1.4, 2000);
 
+        pros::Task lbup(lb_raise);
+
+        turn_to_face_new(45, new_turnpid);
+
+        left_drive_motors.move(-25); right_drive_motors.move(25);
+        pros::delay(200);
+        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+
+        left_drive_motors.move(25); right_drive_motors.move(-25);
+
         autoclamp.remove();
+        lbup.remove();
     }
 
     else if (route_num == 4) { // new red awp
@@ -258,45 +270,46 @@ void autonomous() {
         turn_to_face_new(60, turnpid, 1.2);
         pros::delay(400);
         coloursort.remove();
-        pros::Task redsort(red_sort);
+        //pros::Task redsort(red_sort);
         move_one_dir_advanced(Point(-5, 33), new_movepid, new_turnpid, 'x', 1.7);
 
         turn_to_face_new(340, turnpid, 2);
         left_drive_motors.move(-70); right_drive_motors.move(70);
         pros::delay(350);
-        mogo_piston.set_value(false);
+        left_drive_motors.move(0); right_drive_motors.move(0); // delete
+        //mogo_piston.set_value(false);
 
-        move_to_point_straight(Point(36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
-        move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9);
-        turn_to_face_new(186, turnpid, 1.2);
+        //move_to_point_straight(Point(36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
+        //move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9);
+        //turn_to_face_new(186, turnpid, 1.2);
+//
+        //redsort.remove();
+        ////pros::Task lbup(lb_raise);
+//
+        //left_drive_motors.move(25); right_drive_motors.move(-25);
+        //pros::delay(200);
+        //while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        //pros::delay(100);
+        //left_drive_motors.move(80); right_drive_motors.move(-80);
+        //pros::delay(750);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
+        //pros::delay(200);
+//
+        //intake_motor.move(127);
+        //pros::delay(1200);
+        //intake_motor.move(0);
 
-        redsort.remove();
-        pros::Task lbup(lb_raise);
+        //left_drive_motors.move(-85); right_drive_motors.move(85);
+        //pros::delay(200);
+        //while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        //pros::delay(100);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
+//
+        //left_drive_motors.move(-30); right_drive_motors.move(-30);
+        //pros::delay(200);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
 
-        left_drive_motors.move(25); right_drive_motors.move(-25);
-        pros::delay(200);
-        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
-        pros::delay(100);
-        left_drive_motors.move(80); right_drive_motors.move(-80);
-        pros::delay(750);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-        pros::delay(200);
-
-        intake_motor.move(127);
-        pros::delay(1000);
-        intake_motor.move(0);
-
-        left_drive_motors.move(-75); right_drive_motors.move(75);
-        pros::delay(200);
-        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
-        pros::delay(100);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-
-        left_drive_motors.move(-30); right_drive_motors.move(-30);
-        pros::delay(200);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-
-        lbup.remove();
+        //lbup.remove();
     }
 
     else if (route_num == 5) { // new blue awp
@@ -315,59 +328,61 @@ void autonomous() {
         move_one_dir_advanced(Point(-20, 23.5), new_movepid, new_turnpid, 'y', 1.5);
         intake_motor.move(127);
         turn_to_face_new(230, new_turnpid, 1.2); // 360 - 130
-        move_one_dir_advanced(Point(-5, 40.5), new_movepid, new_turnpid, 'y', -1.2);
+        move_one_dir_advanced(Point(-5, 39.5), new_movepid, new_turnpid, 'y', -1.2);
+        pros::delay(200);
         // pick up ring 1 ^
         turn_to_face_new(210, new_turnpid, 1.5); // 360 - 150
         move_one_dir_advanced(Point(-5, 35), new_movepid, new_turnpid, 'y', -1.7);
         // reverse out ^
         turn_to_face_new(220, new_turnpid, 1.5); // 360 - 140
-        move_one_dir_advanced(Point(8, 40.5), new_movepid, new_turnpid, 'y', -1.4);
+        move_one_dir_advanced(Point(8, 40), new_movepid, new_turnpid, 'y', -1.4);
         pros::delay(400);
         // 2 discs picked up ^^
         move_one_dir_advanced(Point(0, 37), new_movepid, new_turnpid, 'x', -1.7);
         turn_to_face_new(290, turnpid, 1.2); // 360 - 60
         pros::delay(400);
         coloursort.remove();
-        pros::Task redsort(red_sort);
+        //pros::Task redsort(red_sort);
         move_one_dir_advanced(Point(5, 33), new_movepid, new_turnpid, 'x', -1.7);
         // 3 rings picked up ^^
 
         left_drive_motors.move(-70); right_drive_motors.move(70);
         pros::delay(150);
+        left_drive_motors.move(0); right_drive_motors.move(0); // delete
         turn_to_face_new(20, turnpid, 2); // 360 - 340
-        mogo_piston.set_value(false);
+        //mogo_piston.set_value(false);
 
-        move_to_point_straight(Point(-36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
-        move_one_dir_advanced(Point(-37.1, -1), new_movepid, new_turnpid, 'x', 0.9);
-        turn_to_face_new(174, turnpid, 1.2); // 360 - 186
+        //move_to_point_straight(Point(-36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
+        //move_one_dir_advanced(Point(-37.1, -1), new_movepid, new_turnpid, 'x', 0.9);
+        //turn_to_face_new(174, turnpid, 1.2); // 360 - 186
+//
+        //redsort.remove();
+        ////pros::Task lbup(lb_raise);
+//
+        //left_drive_motors.move(25); right_drive_motors.move(-25);
+        //pros::delay(200);
+        //while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        //pros::delay(100);
+        //left_drive_motors.move(30); right_drive_motors.move(-30);
+        //pros::delay(350);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
+        //pros::delay(150);
+//
+        //intake_motor.move(127);
+        //pros::delay(1200);
+        //intake_motor.move(0);
 
-        redsort.remove();
-        pros::Task lbup(lb_raise);
-
-        left_drive_motors.move(25); right_drive_motors.move(-25);
-        pros::delay(200);
-        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
-        pros::delay(100);
-        left_drive_motors.move(80); right_drive_motors.move(-80);
-        pros::delay(750);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-        pros::delay(200);
-
-        intake_motor.move(127);
-        pros::delay(1000);
-        intake_motor.move(0);
-
-        left_drive_motors.move(-95); right_drive_motors.move(95);
-        pros::delay(200);
-        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
-        pros::delay(100);
-        left_drive_motors.move(0); right_drive_motors.move(0);
-
-        lbup.remove();
-
-        left_drive_motors.move(-30); right_drive_motors.move(-30);
-        pros::delay(200);
-        left_drive_motors.move(0); right_drive_motors.move(0);
+        //left_drive_motors.move(-110); right_drive_motors.move(110);
+        //pros::delay(200);
+        //while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        //pros::delay(100);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
+//
+        //lbup.remove();
+//
+        //left_drive_motors.move(-30); right_drive_motors.move(-30);
+        //pros::delay(200);
+        //left_drive_motors.move(0); right_drive_motors.move(0);
 
     }
 
