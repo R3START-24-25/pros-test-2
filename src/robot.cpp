@@ -14,7 +14,7 @@ pros::MotorGroup right_drive_motors({1, 2, 3}, pros::v5::MotorGears::green);
 pros::adi::DigitalOut mogo_piston(1);
 pros::adi::DigitalOut doinker_piston(2);
 
-pros::Imu inertial_sensor(5);
+pros::Imu inertial_sensor(16);
 pros::Rotation left_encoder(15);
 pros::Rotation back_encoder(14);
 

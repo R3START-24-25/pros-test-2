@@ -22,6 +22,7 @@ void track_robot() {
         if (imu_reading > 360) imu_reading = 0;
         float left_reading = left_encoder.get_position() / 100.0; // convert to degrees
         float back_reading = back_encoder.get_position() / 100.0;
+        back_reading = 0; // REMOVE!
 
         float delta_theta = imu_reading - last_imu_reading;
 

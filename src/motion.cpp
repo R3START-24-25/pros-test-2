@@ -181,7 +181,7 @@ void move_one_dir(double pos, PID pid, char axis, double dir, int timeout) {
     left_drive_motors.move(0); right_drive_motors.move(0);
 }
 
-void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double dir, int timeout) {
+void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double dir, int timeout, double tolerance) {
     int time = 0;
     double linear_pid_out = 127;
     pid.start = true;
@@ -193,10 +193,10 @@ void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double
     //turn_to_face_new(abs_turn_to, turnpid);
     //std::cout << "abs turn to: " << abs_turn_to << std::endl;
 
-    while (fabs(linear_pid_out) > 0.6) {
+    while (fabs(linear_pid_out) > tolerance) {
         linear_pid_out = move_pid_one_dir(pid, pos, axis);
 
-        linear_pid_out = fabs(linear_pid_out) < 14 && fabs(linear_pid_out) > 0.60 ? (linear_pid_out > 0 ? 14 : -14) : linear_pid_out;
+        linear_pid_out = fabs(linear_pid_out) < 14 && fabs(linear_pid_out) > tolerance ? (linear_pid_out > 0 ? 14 : -14) : linear_pid_out;
         linear_pid_out = fabs(linear_pid_out) > 90 ? (linear_pid_out > 0 ? 90 : -90) : linear_pid_out;
 
         left_drive_motors.move(linear_pid_out * dir);
@@ -209,6 +209,21 @@ void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double
     }
 
     left_drive_motors.move(0); right_drive_motors.move(0);
+}
+
+void move_turn_to_point(Point target, PID pid, PID turnpid, bool back, char axis, double dir, double turnmult, int timeout, double tolerance) {
+    double dx = target.x - position.x;
+    double dy = target.y - position.y;
+    double abs_turn_to = atan2f(target.x - position.x, target.y - position.y) * (180.0/M_PI);
+    std::cout << "abs: " << abs_turn_to;
+    if (!back) abs_turn_to += 180;
+    while (abs_turn_to < 0) abs_turn_to += 360;
+    while (abs_turn_to > 360) abs_turn_to -= 360;
+
+    turn_to_face_new(abs_turn_to, turnpid, turnmult);
+    pros::delay(500);
+    std::cout << "t: " << position.theta;
+    move_one_dir_advanced(target, pid, turnpid, axis, dir, timeout, tolerance);
 }
 
 void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, bool turn, bool xrev, double mult, double heading, int timeout, bool invert) {
@@ -226,8 +241,8 @@ void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, b
         double dy = target.y - position.y; //-5
         if (fabs(dx) + fabs(dy) > 3) {
             abs_turn_to = atan2f(dx, dy) * (180/M_PI); //100
-            if (abs_turn_to < 0) abs_turn_to += 360;
-            if (invert) abs_turn_to = fmod(abs_turn_to + 180, 360);
+            if (invert) abs_turn_to += 180;
+            while (abs_turn_to < 0) abs_turn_to += 360;
             std::cout << "abs_turn_to: " << abs_turn_to << std::endl;
         }
 

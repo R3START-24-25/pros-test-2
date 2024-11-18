@@ -69,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 4; // 0 = skills, 4 = red, 5 = blue
+const int route_num = 1; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -151,10 +151,15 @@ void autonomous() {
     pros::Task autoclamp(autoclamp_auton);
     pros::Task quickrev(quick_rev);
 
-    if (route_num == 0) { // skills
-        PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
-        PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
+    PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
+    PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
 
+    if (route_num == 1) {
+        move_turn_to_point(Point(-48,-60), new_movepid, new_turnpid, false, 'y', 0.7, 1.1, 5000);
+        turn_to_face(90, new_turnpid);
+    }
+
+    if (route_num == 0) { // skills
         intake_motor.move_velocity(600);
         pros::delay(850);
         intake_motor.move(0);
@@ -190,7 +195,7 @@ void autonomous() {
         intake_motor.move_velocity(600);
         move_one_dir(-41, movepid, 'y');
         // ring 1 ^
-        turn_to_face(275, turnpid);
+        turn_to_face(275, turnpid);;
         move_one_dir(48, movepid, 'x', -1);
         // ring 2 ^
         turn_to_face(184, turnpid); // 180 //
@@ -270,34 +275,34 @@ void autonomous() {
         turn_to_face_new(60, turnpid, 1.2);
         pros::delay(400);
         coloursort.remove();
-        //pros::Task redsort(red_sort);
+        pros::Task redsort(red_sort);
         move_one_dir_advanced(Point(-5, 33), new_movepid, new_turnpid, 'x', 1.7);
 
         turn_to_face_new(340, turnpid, 2);
-        left_drive_motors.move(-70); right_drive_motors.move(70);
-        pros::delay(350);
-        left_drive_motors.move(0); right_drive_motors.move(0); // delete
-        //mogo_piston.set_value(false);
+        left_drive_motors.move(-40); right_drive_motors.move(40);
+        pros::delay(100);
+        //left_drive_motors.move(0); right_drive_motors.move(0); // delete
+        mogo_piston.set_value(false);
 
-        //move_to_point_straight(Point(36, -1), new_movepid, new_turnpid, 'x', false, false, 1.1, 0, 1000);
-        //move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9);
-        //turn_to_face_new(186, turnpid, 1.2);
-//
-        //redsort.remove();
-        ////pros::Task lbup(lb_raise);
-//
-        //left_drive_motors.move(25); right_drive_motors.move(-25);
-        //pros::delay(200);
-        //while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
-        //pros::delay(100);
-        //left_drive_motors.move(80); right_drive_motors.move(-80);
-        //pros::delay(750);
-        //left_drive_motors.move(0); right_drive_motors.move(0);
-        //pros::delay(200);
-//
-        //intake_motor.move(127);
-        //pros::delay(1200);
-        //intake_motor.move(0);
+        move_to_point_straight(Point(36, 7), new_movepid, new_turnpid, 'x', false, false, 1.0, 0, 1000);
+        //move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9, 2000, 0.1);
+        move_one_dir_advanced(Point(41.5, -1), new_movepid, new_turnpid, 'x', -1.0, 5000, 0.01);
+        turn_to_face_new(183, turnpid, 1.0);
+
+        redsort.remove();
+        //pros::Task lbup(lb_raise);
+
+        left_drive_motors.move(25); right_drive_motors.move(-25); pros::delay(200);
+        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        pros::delay(100);
+        left_drive_motors.move(35); right_drive_motors.move(35); pros::delay(100);
+        left_drive_motors.move(-40); right_drive_motors.move(-40); pros::delay(100);
+        left_drive_motors.move(80); right_drive_motors.move(-80); pros::delay(750);
+        left_drive_motors.move(0); right_drive_motors.move(0); pros::delay(200);
+
+        intake_motor.move(127);
+        pros::delay(1200);
+        intake_motor.move(0);
 
         //left_drive_motors.move(-85); right_drive_motors.move(85);
         //pros::delay(200);
@@ -308,7 +313,7 @@ void autonomous() {
         //left_drive_motors.move(-30); right_drive_motors.move(-30);
         //pros::delay(200);
         //left_drive_motors.move(0); right_drive_motors.move(0);
-
+//
         //lbup.remove();
     }
 

@@ -70,7 +70,8 @@ extern void track_robot();
 extern void turn_to_face(double heading, PID pid, double mult = 1);
 extern void turn_to_face_new(double heading, PID pid, double mult = 1);
 extern void move_one_dir(double pos, PID pid, char axis, double dir = 1, int timeout = 2000);
-extern void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double dir = 1, int timeout = 2000);
+extern void move_one_dir_advanced(Point target, PID pid, PID turnpid, char axis, double dir = 1, int timeout = 2000, double tolerance = 0.60);
+extern void move_turn_to_point(Point target, PID pid, PID turnpid, bool back, char axis, double dir = 1, double turnmult = 1, int timeout = 2000, double tolerance = 0.60);
 extern void move_to_point_straight(Point target, PID movepid, PID turnpid, char axis, bool turn, bool xrev = false, double mult = 1, double heading = position.theta, int timeout = 3000, bool invert = true);
 
 #define ROBOT_HPP
