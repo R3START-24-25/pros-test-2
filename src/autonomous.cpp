@@ -69,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 1; // 0 = skills, 4 = red, 5 = blue
+const int route_num = 0; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -170,8 +170,16 @@ void autonomous() {
         turn_to_face(0, turnpid);
         intake_motor.move_velocity(600);
         move_one_dir(-37, movepid, 'y');
-        turn_to_face(84, turnpid);
-        move_one_dir(-48, movepid, 'x');
+        move_turn_to_point(Point(-43, -70), new_movepid, new_turnpid, false, 'y');
+        move_turn_to_point(Point(-48, -82), new_movepid, new_turnpid, false, 'y');
+        move_turn_to_point(Point(-43, -58.5), new_movepid, new_turnpid, true, 'y');
+        turn_to_face(90, new_turnpid);
+        //Intake On
+        move_turn_to_point(Point(-57, -58.5), new_movepid, new_turnpid, false, 'x');
+        turn_to_face(90, new_turnpid);
+        //LB raise
+        move_turn_to_point(Point(-43, -58.5), new_movepid, new_turnpid, true, 'x');
+        move_turn_to_point(Point(-43, -30), new_movepid, new_turnpid, false, 'x');
         turn_to_face(174, turnpid); // 180
         move_one_dir(-16, movepid, 'y', -1);
         move_one_dir(-3, movepid, 'y', -0.7);
