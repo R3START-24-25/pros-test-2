@@ -8,22 +8,22 @@
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
-pros::MotorGroup left_drive_motors({11, 12, 13}, pros::v5::MotorGears::green);
-pros::MotorGroup right_drive_motors({1, 2, 3}, pros::v5::MotorGears::green);
+pros::MotorGroup left_drive_motors({18, 19, 20}, pros::v5::MotorGears::green);
+pros::MotorGroup right_drive_motors({11, 12, 13}, pros::v5::MotorGears::green);
 
-pros::adi::DigitalOut mogo_piston(1);
+pros::adi::DigitalOut mogo_piston(8); // H
 pros::adi::DigitalOut doinker_piston(2);
 
-pros::Imu inertial_sensor(16);
-pros::Rotation left_encoder(15);
-pros::Rotation back_encoder(14);
+pros::Imu inertial_sensor(2);
+pros::Rotation left_encoder(17);
+pros::Rotation back_encoder(99);
 
-pros::Motor intake_motor(4, pros::MotorGearset::blue);
+pros::Motor intake_motor(14, pros::MotorGearset::blue);
 
-pros::MotorGroup lb_motors({-6, 16});
-pros::Rotation lb_rotation_sensor(17);
+pros::MotorGroup lb_motors({-1, 10});
+pros::Rotation lb_rotation_sensor(8);
 
 pros::Optical optical_sensor(18);
-pros::Distance mogo_distance(7);
+pros::Distance mogo_distance(3);
 
 Position position;

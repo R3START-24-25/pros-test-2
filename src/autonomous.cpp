@@ -69,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 0; // 0 = skills, 4 = red, 5 = blue
+const int route_num = 1; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -127,13 +127,13 @@ void quick_rev() {
     }
 }
 
-void lb_raise() {
-    const double lb_rest_pos = 360;
-    const double lb_pickup_pos = 337.5;
-    const double lb_score_pos = 235;
-    const double lb_doublescore_pos = 225;
-    const double lb_tolerance = 2.5;
+const double lb_rest_pos = 360;
+const double lb_pickup_pos = 337.5;
+const double lb_score_pos = 235;
+const double lb_doublescore_pos = 225;
+const double lb_tolerance = 2.5;
 
+void lb_score() {
     while (true) {
         double lb_pos = lb_rotation_sensor.get_position() / 100.0;
         while (lb_pos < 180) lb_pos += 360;
@@ -147,6 +147,34 @@ void lb_raise() {
     }
 }
 
+void lb_up_to_prime() {
+    while (true) {
+        double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+        while (lb_pos < 180) lb_pos += 360;
+        if (Within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
+            lb_motors.move(0); break;
+        } else {
+            lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_pickup_pos));
+        }
+
+        pros::delay(5);
+    }
+}
+
+void lb_down_to_rest() {
+    while (true) {
+        double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+        while (lb_pos < 180) lb_pos += 360;
+        if (Within_tolerance(lb_pos, lb_rest_pos, lb_tolerance)) {
+            lb_motors.move(0); break;
+        } else {
+            lb_motors.move(1 * Arm_pid(Armpid, lb_pos, lb_rest_pos));
+        }
+
+        pros::delay(5);
+    }
+}
+
 void autonomous() {
     pros::Task autoclamp(autoclamp_auton);
     pros::Task quickrev(quick_rev);
@@ -154,9 +182,11 @@ void autonomous() {
     PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
     PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
 
+    PID slbs_movepid = PID(2.0, 1.3, 0.05, 50, 5);
+    PID slbs_turnpid = PID(0.6, 0.0, 0.05, 45, 5);
+
     if (route_num == 1) {
-        move_turn_to_point(Point(-48,-60), new_movepid, new_turnpid, false, 'y', 0.7, 1.1, 5000);
-        turn_to_face(90, new_turnpid);
+        move_one_dir_advanced(Point(0, 48), slbs_movepid, slbs_turnpid, 'y');
     }
 
     if (route_num == 0) { // skills
@@ -239,7 +269,7 @@ void autonomous() {
         mogo_piston.set_value(false);
         move_one_dir(-30, movepid, 'x', -1.4, 2000);
 
-        pros::Task lbup(lb_raise);
+        pros::Task lbup(lb_score);
 
         turn_to_face_new(45, new_turnpid);
 
@@ -298,7 +328,7 @@ void autonomous() {
         turn_to_face_new(183, turnpid, 1.0);
 
         redsort.remove();
-        //pros::Task lbup(lb_raise);
+        //pros::Task lbup(lb_score);
 
         left_drive_motors.move(25); right_drive_motors.move(-25); pros::delay(200);
         while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
@@ -370,7 +400,7 @@ void autonomous() {
         //turn_to_face_new(174, turnpid, 1.2); // 360 - 186
 //
         //redsort.remove();
-        ////pros::Task lbup(lb_raise);
+        ////pros::Task lbup(lb_score);
 //
         //left_drive_motors.move(25); right_drive_motors.move(-25);
         //pros::delay(200);

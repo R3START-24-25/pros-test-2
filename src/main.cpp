@@ -7,7 +7,7 @@
 
 class Drive {
     const double EulerConstant = std::exp(1.0);
-    const float exponential_a = pow(10, (log10(127)/80));
+    const float exponential_a = pow(10, (log10(127.0)/80.0));
     const float exponential_b(float x) {
         return ((1/(1+pow(EulerConstant, (-1*(x-83.5)/12))))*110)+20;
     }
