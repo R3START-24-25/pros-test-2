@@ -60,6 +60,8 @@ bool reversing = false;
 bool can_intake = true;
 
 void initialize() {
+    optical_sensor.set_led_pwm(255);
+
     left_encoder.reset_position();
     left_encoder.set_data_rate(5);
     back_encoder.reset_position();
@@ -92,7 +94,24 @@ bool within_tolerance(double current, double target, double tolerance) {
     return false;
 }
 
+bool Can_sort = true;
+void Colour_sort() {
+    optical_sensor.set_led_pwm(255);
+    bool blue = true;
+    while (true) {
+        if ( Can_sort && optical_sensor.get_proximity() > 250 && ((blue && optical_sensor.get_rgb().red > 500) || (!blue && optical_sensor.get_rgb().blue > 800)) ) {
+            can_intake = false;
+            intake_motor.move(-127);
+            pros::delay(70);
+            intake_motor.move(127);
+            can_intake = true;
+        }
+        pros::delay(5);
+    }
+}
+
 void opcontrol() {
+    //pros::Task sort(Colour_sort);
     while (inertial_sensor.is_calibrating()) pros::delay(5);
     left_drive_motors.set_brake_mode(pros::MotorBrake::coast);
     right_drive_motors.set_brake_mode(pros::MotorBrake::coast);
@@ -219,6 +238,9 @@ void opcontrol() {
             std::cout << "blue: " << optical_sensor.get_rgb().blue;
             std::cout << " green: " << optical_sensor.get_rgb().green;
             std::cout << " red: " << optical_sensor.get_rgb().red << std::endl;
+            std::cout << "prox: " << optical_sensor.get_proximity() << std::endl;
+            std::cout << "v: " << intake_motor.get_actual_velocity();
+            std::cout << " torque: " << intake_motor.get_torque() << std::endl;
         }
         count++;
         colour_count++;

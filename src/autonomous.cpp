@@ -69,7 +69,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 1; // 0 = skills, 4 = red, 5 = blue
+const int route_num = 0; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -116,34 +116,41 @@ void red_sort() {
     }
 }
 
-void quick_rev() {
-    while (true) {
-        if (fabs(intake_motor.get_actual_velocity()) < 10 && intake_motor.get_torque() > 2.5) {
-            intake_motor.move(-127);
-            pros::delay(150);
-            intake_motor.move(127);
-        }
-        pros::delay(10);
-    }
-}
-
 const double lb_rest_pos = 360;
 const double lb_pickup_pos = 337.5;
 const double lb_score_pos = 235;
 const double lb_doublescore_pos = 225;
 const double lb_tolerance = 2.5;
 
+void quick_rev() {
+    while (true) {
+        if (fabs(intake_motor.get_actual_velocity()) < 5 && intake_motor.get_torque() > 0.2) {
+            double lb_pos = lb_rotation_sensor.get_position() / 100.0;
+            while (lb_pos < 180) lb_pos += 360;
+            if (!Within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance + 10)) {
+                intake_motor.move(-127);
+                pros::delay(250);
+                intake_motor.move(127);
+            }
+        }
+        pros::delay(10);
+    }
+}
+
 void lb_score() {
+    while (intake_motor.get_actual_velocity() > 20) pros::delay(10);
+    intake_motor.move(0);
+    int time = 0;
     while (true) {
         double lb_pos = lb_rotation_sensor.get_position() / 100.0;
         while (lb_pos < 180) lb_pos += 360;
-        if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance)) {
+        if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance + 5) || time > 2000) {
             lb_motors.move(0); break;
         } else {
             lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_score_pos));
         }
 
-        pros::delay(5);
+        pros::delay(5); time += 5;
     }
 }
 
@@ -193,31 +200,39 @@ void autonomous() {
         intake_motor.move_velocity(600);
         pros::delay(850);
         intake_motor.move(0);
-        move_one_dir(-12, movepid, 'y');
+        move_one_dir_advanced(Point(0,-10), slbs_movepid, slbs_turnpid, 'y', 1.5);
         turn_to_face(270, turnpid);
-        move_one_dir(-19, movepid, 'x', -1);
+        move_one_dir(-20, movepid, 'x', -1);
         mogo_piston.set_value(true);
-        turn_to_face(0, turnpid);
+        turn_to_face(0, slbs_turnpid);
         intake_motor.move_velocity(600);
         move_one_dir(-37, movepid, 'y');
-        move_turn_to_point(Point(-43, -70), new_movepid, new_turnpid, false, 'y');
-        move_turn_to_point(Point(-48, -82), new_movepid, new_turnpid, false, 'y');
-        move_turn_to_point(Point(-43, -58.5), new_movepid, new_turnpid, true, 'y');
-        turn_to_face(90, new_turnpid);
-        //Intake On
-        move_turn_to_point(Point(-57, -58.5), new_movepid, new_turnpid, false, 'x');
-        turn_to_face(90, new_turnpid);
-        //LB raise
-        move_turn_to_point(Point(-43, -58.5), new_movepid, new_turnpid, true, 'x');
-        move_turn_to_point(Point(-43, -30), new_movepid, new_turnpid, false, 'x');
-        turn_to_face(174, turnpid); // 180
+        // ^^ pick up disc 1
+        //move_turn_to_point(Point(-43, -70), new_movepid, new_turnpid, false, 'y');
+        //move_turn_to_point(Point(-48, -82), new_movepid, new_turnpid, false, 'y');
+        turn_to_face(35, slbs_turnpid);
+        move_to_point_straight(Point(-45, -82), new_movepid, new_turnpid, 'y', false);
+        // ^^ pickup disc 2
+        pros::Task lbup1(lb_up_to_prime);
+        move_turn_to_point(Point(-38, -61), slbs_movepid, slbs_turnpid, true, 'y');
+        turn_to_face(87, slbs_turnpid); // face wall stake
+        move_turn_to_point(Point(-54, -61), new_movepid, new_turnpid, false, 'x');
+        // go into wall stake ^^
+        lbup1.remove();
+        move_one_dir_advanced(Point(-50, -61), new_movepid, new_turnpid, 'x', 1.5);
+        // ^^ drive back before lb down
+        lb_score();
+        pros::Task lbrest(lb_down_to_rest);
+        intake_motor.move(127);
+        move_turn_to_point(Point(-46, -61), new_movepid, new_turnpid, true, 'x', 1.5);
+        move_turn_to_point(Point(-46, -30), new_movepid, new_turnpid, false, 'x', 2.5);
         move_one_dir(-16, movepid, 'y', -1);
         move_one_dir(-3, movepid, 'y', -0.7);
         move_one_dir(-6, movepid, 'y', -1.3);
         turn_to_face(60, turnpid);
         move_one_dir(-15, movepid, 'y', 1.1);
         turn_to_face(340, turnpid);
-        move_one_dir(-7, movepid, 'y', 1.1, 1000);
+        move_one_dir(-2, movepid, 'y', 1.1, 1000);
         mogo_piston.set_value(false);
         // mogo in corner
         move_one_dir(-13, movepid, 'y', 1.6);
