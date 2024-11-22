@@ -1,4 +1,5 @@
 #include "main.h"
+#include "pros/motors.h"
 #include "pros/rtos.hpp"
 #include <cmath>
 #include "robot.hpp"
@@ -69,7 +70,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 0; // 0 = skills, 4 = red, 5 = blue
+const int route_num = 4; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -138,13 +139,13 @@ void quick_rev() {
 }
 
 void lb_score() {
-    while (intake_motor.get_actual_velocity() > 20) pros::delay(10);
+    while (intake_motor.get_actual_velocity() > 40) pros::delay(10);
     intake_motor.move(0);
     int time = 0;
     while (true) {
         double lb_pos = lb_rotation_sensor.get_position() / 100.0;
         while (lb_pos < 180) lb_pos += 360;
-        if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance + 5) || time > 2000) {
+        if (Within_tolerance(lb_pos, lb_score_pos, lb_tolerance + 5) || time > 1500) {
             lb_motors.move(0); break;
         } else {
             lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_score_pos));
@@ -159,7 +160,7 @@ void lb_up_to_prime() {
         double lb_pos = lb_rotation_sensor.get_position() / 100.0;
         while (lb_pos < 180) lb_pos += 360;
         if (Within_tolerance(lb_pos, lb_pickup_pos, lb_tolerance)) {
-            lb_motors.move(0); break;
+            lb_motors.move(0);
         } else {
             lb_motors.move(-1 * Arm_pid(Armpid, lb_pos, lb_pickup_pos));
         }
@@ -184,7 +185,6 @@ void lb_down_to_rest() {
 
 void autonomous() {
     pros::Task autoclamp(autoclamp_auton);
-    pros::Task quickrev(quick_rev);
 
     PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
     PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
@@ -192,42 +192,41 @@ void autonomous() {
     PID slbs_movepid = PID(2.0, 1.3, 0.05, 50, 5);
     PID slbs_turnpid = PID(0.6, 0.0, 0.05, 45, 5);
 
-    if (route_num == 1) {
-        move_one_dir_advanced(Point(0, 48), slbs_movepid, slbs_turnpid, 'y');
-    }
+    lb_motors.set_brake_mode_all(pros::motor_brake_mode_e::E_MOTOR_BRAKE_HOLD);
 
     if (route_num == 0) { // skills
+        pros::Task quickrev(quick_rev);
+
         intake_motor.move_velocity(600);
         pros::delay(850);
         intake_motor.move(0);
         move_one_dir_advanced(Point(0,-10), slbs_movepid, slbs_turnpid, 'y', 1.5);
         turn_to_face(270, turnpid);
-        move_one_dir(-20, movepid, 'x', -1);
+        move_one_dir(-20, movepid, 'x', -1.2);
         mogo_piston.set_value(true);
-        turn_to_face(0, slbs_turnpid);
+        turn_to_face(0, slbs_turnpid, 1.1);
         intake_motor.move_velocity(600);
-        move_one_dir(-37, movepid, 'y');
-        // ^^ pick up disc 1
-        //move_turn_to_point(Point(-43, -70), new_movepid, new_turnpid, false, 'y');
-        //move_turn_to_point(Point(-48, -82), new_movepid, new_turnpid, false, 'y');
-        turn_to_face(35, slbs_turnpid);
-        move_to_point_straight(Point(-45, -82), new_movepid, new_turnpid, 'y', false);
+        move_one_dir(-37, movepid, 'y', 1.2);
+        // ^^ pickup disc 1
+        turn_to_face(35, slbs_turnpid, 1.2);
+        move_to_point_straight(Point(-45, -82), new_movepid, new_turnpid, 'y', false, false, 1.4);
         // ^^ pickup disc 2
+        move_turn_to_point(Point(-44, -60.5), slbs_movepid, slbs_turnpid, true, 'y', 1.3);
         pros::Task lbup1(lb_up_to_prime);
-        move_turn_to_point(Point(-38, -61), slbs_movepid, slbs_turnpid, true, 'y');
         turn_to_face(87, slbs_turnpid); // face wall stake
-        move_turn_to_point(Point(-54, -61), new_movepid, new_turnpid, false, 'x');
+        move_turn_to_point(Point(-63, -60.5), new_movepid, new_turnpid, false, 'x', 0.4, 1.1, 1500);
         // go into wall stake ^^
         lbup1.remove();
-        move_one_dir_advanced(Point(-50, -61), new_movepid, new_turnpid, 'x', 1.5);
-        // ^^ drive back before lb down
+        pros::delay(500);
         lb_score();
+        move_one_dir_advanced(Point(-50, -61), new_movepid, new_turnpid, 'x', 1.5);
+        // ^^ drive back before lb back up
         pros::Task lbrest(lb_down_to_rest);
         intake_motor.move(127);
-        move_turn_to_point(Point(-46, -61), new_movepid, new_turnpid, true, 'x', 1.5);
-        move_turn_to_point(Point(-46, -30), new_movepid, new_turnpid, false, 'x', 2.5);
-        move_one_dir(-16, movepid, 'y', -1);
-        move_one_dir(-3, movepid, 'y', -0.7);
+        move_turn_to_point(Point(-46, -61), new_movepid, new_turnpid, true, 'x', 1.5, 1.5);
+        move_turn_to_point(Point(-46, -30), new_movepid, new_turnpid, false, 'x', 3.5, 1.5);
+        move_one_dir(-16, movepid, 'y', -1.5);
+        move_one_dir(-3, movepid, 'y', -1.5);
         move_one_dir(-6, movepid, 'y', -1.3);
         turn_to_face(60, turnpid);
         move_one_dir(-15, movepid, 'y', 1.1);
@@ -238,12 +237,13 @@ void autonomous() {
         move_one_dir(-13, movepid, 'y', 1.6);
         turn_to_face(270, turnpid, 1.4);
 
-        intake_motor.move(0);
-
-        move_to_point_straight(Point(6,-16.5), movepid, turnpid, 'x', true, false, 1, 86, 2500);
-        move_one_dir(23, movepid, 'x');
+        move_to_point_straight(Point(10,-16.5), slbs_movepid, slbs_turnpid, 'x', true, false, 1.2);
+        move_turn_to_point(Point(26, -16.5), slbs_movepid, slbs_turnpid, true, 'x');
+        turn_to_face_new(90, slbs_turnpid);
+        move_one_dir(23, movepid, 'x', 1, 800);
         mogo_piston.set_value(true);
         // picked up mogo ^
+
         turn_to_face(5, turnpid);
         intake_motor.move_velocity(600);
         move_one_dir(-41, movepid, 'y');
@@ -260,12 +260,27 @@ void autonomous() {
         move_one_dir(-18, movepid, 'y', 1.1);
         // ring 5 ^
         turn_to_face(30, turnpid);
-        intake_motor.move(0);
         move_one_dir(-6, movepid, 'y', 1.1, 1000);
         mogo_piston.set_value(false);
         // mogo in corner
         move_one_dir(-13, movepid, 'y', 1.6);
 
+        // left side lb start
+        pros::Task lbup2(lb_up_to_prime);
+        move_to_point_straight(Point(44, -64.5), slbs_movepid, slbs_turnpid, 'y', false, false, 1.3);
+        intake_motor.move(127);
+        turn_to_face(273, slbs_turnpid); // face wall stake
+        move_turn_to_point(Point(70, -64.5), new_movepid, new_turnpid, false, 'x', -0.4, 1.0, 1500);
+        // go into wall stake ^^
+        lbup2.remove();
+        pros::delay(500);
+        lb_score();
+        move_one_dir_advanced(Point(50, -61), new_movepid, new_turnpid, 'x', -1.5);
+        // ^^ drive back before lb back up
+        pros::Task lbrest2(lb_down_to_rest);
+        // left side lb end
+
+        turn_to_face_new(340, slbs_turnpid, 2);
         // go to blue mogo
         move_to_point_straight(Point(35,-108), movepid, turnpid, 'y', true, false, 1, 206);
         move_one_dir(-132, turnpid, 'y', -2.5);
@@ -297,11 +312,11 @@ void autonomous() {
 
         autoclamp.remove();
         lbup.remove();
+
+        quickrev.remove();
     }
 
     else if (route_num == 4) { // new red awp
-        pros::Task coloursort(colour_sort);
-
         PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
         PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
 
@@ -309,42 +324,46 @@ void autonomous() {
         inertial_sensor.set_rotation(29);
         position.theta = 29;
 
-        move_one_dir_advanced(Point(20, 27), new_movepid, new_turnpid, 'y', 0.8);
+        move_one_dir_advanced(Point(20, 26.5), new_movepid, new_turnpid, 'y', 0.9);
         mogo_piston.set_value(true);
         // pick up mogo ^
-        move_one_dir_advanced(Point(20, 23.5), new_movepid, new_turnpid, 'y', 1.5);
+        move_one_dir_advanced(Point(20, 23.5), new_movepid, new_turnpid, 'y', 1.7);
         intake_motor.move(127);
-        turn_to_face_new(130, new_turnpid, 1.2);
+        pros::Task quickrev(quick_rev);
+        turn_to_face_new(90, new_turnpid, 1.3);//me old value 130
         move_one_dir_advanced(Point(5, 40.5), new_movepid, new_turnpid, 'y', -1.2);
         // pick up ring 1 ^
+        /*
         turn_to_face_new(150, new_turnpid, 1.5);
         move_one_dir_advanced(Point(5, 35), new_movepid, new_turnpid, 'y', -1.7);
         // reverse out ^
         turn_to_face_new(140, new_turnpid, 1.5);
-        move_one_dir_advanced(Point(-8, 40.5), new_movepid, new_turnpid, 'y', -1.4);
+        move_one_dir_advanced(Point(-8, 42), new_movepid, new_turnpid, 'y', -1.4);
         pros::delay(400);
         // 2 discs picked up ^^
+        
         move_one_dir_advanced(Point(0, 37), new_movepid, new_turnpid, 'x', 1.7);
         turn_to_face_new(60, turnpid, 1.2);
         pros::delay(400);
-        coloursort.remove();
         pros::Task redsort(red_sort);
+        intake_motor.move(80);
         move_one_dir_advanced(Point(-5, 33), new_movepid, new_turnpid, 'x', 1.7);
 
-        turn_to_face_new(340, turnpid, 2);
-        left_drive_motors.move(-40); right_drive_motors.move(40);
-        pros::delay(100);
+        turn_to_face_new(0, turnpid, 2);
+        left_drive_motors.move(-80); right_drive_motors.move(80);
+        pros::delay(850);
         //left_drive_motors.move(0); right_drive_motors.move(0); // delete
         mogo_piston.set_value(false);
 
         move_to_point_straight(Point(36, 7), new_movepid, new_turnpid, 'x', false, false, 1.0, 0, 1000);
         //move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9, 2000, 0.1);
-        move_one_dir_advanced(Point(41.5, -1), new_movepid, new_turnpid, 'x', -1.0, 5000, 0.01);
-        turn_to_face_new(183, turnpid, 1.0);
+        move_one_dir_advanced(Point(39.5, -1), new_movepid, new_turnpid, 'x', -0.8, 1500, 1.20);
+        turn_to_face_new(177, turnpid, 0.8);
 
         redsort.remove();
         //pros::Task lbup(lb_score);
 
+        // start drive in and jiggle
         left_drive_motors.move(25); right_drive_motors.move(-25); pros::delay(200);
         while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
         pros::delay(100);
@@ -352,26 +371,27 @@ void autonomous() {
         left_drive_motors.move(-40); right_drive_motors.move(-40); pros::delay(100);
         left_drive_motors.move(80); right_drive_motors.move(-80); pros::delay(750);
         left_drive_motors.move(0); right_drive_motors.move(0); pros::delay(200);
+        // end drive in and jiggle
 
         intake_motor.move(127);
-        pros::delay(1200);
+        pros::delay(1000);
         intake_motor.move(0);
 
-        //left_drive_motors.move(-85); right_drive_motors.move(85);
-        //pros::delay(200);
-        //while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
-        //pros::delay(100);
-        //left_drive_motors.move(0); right_drive_motors.move(0);
-//
-        //left_drive_motors.move(-30); right_drive_motors.move(-30);
-        //pros::delay(200);
-        //left_drive_motors.move(0); right_drive_motors.move(0);
-//
+        left_drive_motors.move(-85); right_drive_motors.move(85);
+        pros::delay(200);
+        while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        pros::delay(100);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+
+        left_drive_motors.move(-30); right_drive_motors.move(-30);
+        pros::delay(200);
+        left_drive_motors.move(0); right_drive_motors.move(0);
+*/
         //lbup.remove();
+        quickrev.remove();
     }
 
     else if (route_num == 5) { // new blue awp
-        pros::Task coloursort(colour_sort);
 
         PID new_movepid = PID(2.0, 4.5, 0.25, 50, 5);
         PID new_turnpid = PID(0.6, 0.1, 0.00, 45, 5);
@@ -399,7 +419,6 @@ void autonomous() {
         move_one_dir_advanced(Point(0, 37), new_movepid, new_turnpid, 'x', -1.7);
         turn_to_face_new(290, turnpid, 1.2); // 360 - 60
         pros::delay(400);
-        coloursort.remove();
         //pros::Task redsort(red_sort);
         move_one_dir_advanced(Point(5, 33), new_movepid, new_turnpid, 'x', -1.7);
         // 3 rings picked up ^^
@@ -443,6 +462,4 @@ void autonomous() {
         //left_drive_motors.move(0); right_drive_motors.move(0);
 
     }
-
-    quickrev.remove();
 }

@@ -221,7 +221,7 @@ void move_turn_to_point(Point target, PID pid, PID turnpid, bool back, char axis
     while (abs_turn_to > 360) abs_turn_to -= 360;
 
     turn_to_face_new(abs_turn_to, turnpid, turnmult);
-    pros::delay(500);
+    pros::delay(150);
     std::cout << "t: " << position.theta;
     move_one_dir_advanced(target, pid, turnpid, axis, dir, timeout, tolerance);
 }
