@@ -70,7 +70,7 @@ void lb_down() {
     }
 }
 
-const int route_num = 4; // 0 = skills, 4 = red, 5 = blue
+const int route_num = 0; // 0 = skills, 4 = red, 5 = blue
 
 void Check_colour() {
     const bool blue = route_num == 2;
@@ -330,10 +330,10 @@ void autonomous() {
         move_one_dir_advanced(Point(20, 23.5), new_movepid, new_turnpid, 'y', 1.7);
         intake_motor.move(127);
         pros::Task quickrev(quick_rev);
-        turn_to_face_new(90, new_turnpid, 1.3);//me old value 130
+        turn_to_face_new(120, new_turnpid, 1.3);
         move_one_dir_advanced(Point(5, 40.5), new_movepid, new_turnpid, 'y', -1.2);
         // pick up ring 1 ^
-        /*
+        
         turn_to_face_new(150, new_turnpid, 1.5);
         move_one_dir_advanced(Point(5, 35), new_movepid, new_turnpid, 'y', -1.7);
         // reverse out ^
@@ -354,25 +354,38 @@ void autonomous() {
         pros::delay(850);
         //left_drive_motors.move(0); right_drive_motors.move(0); // delete
         mogo_piston.set_value(false);
-
+        // pick up ring for aliance^^
         move_to_point_straight(Point(36, 7), new_movepid, new_turnpid, 'x', false, false, 1.0, 0, 1000);
         //move_one_dir_advanced(Point(37.1, -1), new_movepid, new_turnpid, 'x', -0.9, 2000, 0.1);
         move_one_dir_advanced(Point(39.5, -1), new_movepid, new_turnpid, 'x', -0.8, 1500, 1.20);
         turn_to_face_new(177, turnpid, 0.8);
 
         redsort.remove();
-        //pros::Task lbup(lb_score);
 
+        // charlie code below 
+        turn_to_face(0,slbs_turnpid);
+        /*
+        move_turn_to_point(Point(40.5,-10),new_movepid, new_turnpid, true, 'y',-1);
+        intake_motor.move(127);
+        pros::delay(1000);
+        intake_motor.move(0);
+        */
+       // move_turn_to_point(Point target, PID pid, PID turnpid, bool back, char axis)
+                //pros::Task lbup(lb_score);
+/*
         // start drive in and jiggle
         left_drive_motors.move(25); right_drive_motors.move(-25); pros::delay(200);
         while (abs(left_encoder.get_velocity()) > 100) pros::delay(5);
+        
         pros::delay(100);
         left_drive_motors.move(35); right_drive_motors.move(35); pros::delay(100);
         left_drive_motors.move(-40); right_drive_motors.move(-40); pros::delay(100);
         left_drive_motors.move(80); right_drive_motors.move(-80); pros::delay(750);
         left_drive_motors.move(0); right_drive_motors.move(0); pros::delay(200);
         // end drive in and jiggle
+        */
 
+/*
         intake_motor.move(127);
         pros::delay(1000);
         intake_motor.move(0);
